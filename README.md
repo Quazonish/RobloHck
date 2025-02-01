@@ -1,0 +1,13 @@
+# Is this detected?
+I think ==yes🙁==
+# How frequetly it updated?
+In my plans ==its updating by itself== because it fetches offsets from some api that works
+# WTF is this?
+This is shitty homemade external/exploit that ==you can run everywhere==
+# How this is works?
+1. Getting fake datamodel from pointer
+2. From fake datamodel it gets real datamodel
+3. From datamodel it gets workspace
+4. From workspace it gets camera
+5. From camera it gets humanoid
+6. Now it has addresses for speed, jump power, FOV, etc for writing
