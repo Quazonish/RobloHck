@@ -13,5 +13,6 @@ This is shitty homemade external/exploit that <mark>you can run everywhere</mark
 6. Now it has addresses for speed, jump power, FOV, etc for writing
 # Preview:
 ![Preview of this roblox external](preview.png)
+~~Un~~detected
 ***
 <sub>[Quazonish](https://github.com/Quazonish/)</sub>
