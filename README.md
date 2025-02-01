@@ -11,4 +11,5 @@ This is shitty homemade external/exploit that <mark>you can run everywhere</mark
 4. From workspace it gets camera
 5. From camera it gets humanoid
 6. Now it has addresses for speed, jump power, FOV, etc for writing
-<sub>Quazonish</sub>
+***
+<sub>[Quazonish](https://github.com/Quazonish/)</sub>
