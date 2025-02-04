@@ -3,8 +3,8 @@ from pymem import Pymem
 from pymem.process import is_64_bit, list_processes
 from ctypes import windll
 from psutil import pid_exists
-from tkinter import Tk, Entry, Button, Checkbutton, IntVar
-from tkinter.font import Font
+from gui import Ui_MainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow
 from keyboard import on_release
 from time import time, sleep
 from threading import Thread
@@ -17,6 +17,11 @@ print(offsets['ByfronVersion'])
 print('Current latest roblox version:', get('https://weao.xyz/api/versions/current', headers={'User-Agent': 'WEAO-3PService'}).json()['Windows'])
 print('Got some offsets! Init...')
 baseAddr = 0
+
+class MyApp(QMainWindow, Ui_MainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setupUi(self)
 
 class hyper:
     def __init__(self, ProgramName=None):
@@ -106,8 +111,8 @@ class hyper:
         return not pid_exists(self.ProcessID)
 
 hyper = hyper()
-nameOffset = 104
-childrenOffset = 112
+nameOffset = int(offsets['Name'], 16)
+childrenOffset = int(offsets['Children'], 16)
 
 def ReadRobloxString(ExpectedAddress: int) -> str:
     StringCount = hyper.Pymem.read_int(ExpectedAddress + 0x10)
@@ -164,19 +169,25 @@ def FindFirstChildOfClass(Instance: int, ClassName: str) -> int:
         except:
             pass
 
-data_model, wsAddr, camAddr, fovAddr = [0] * 4
+data_model, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr = [0] * 7
 
 def init():
-    global data_model, wsAddr, camAddr, fovAddr
+    global data_model, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr
     fake_datamodel = hyper.Pymem.read_longlong(baseAddr + int(offsets['FakeDataModelPointer'], 16)) #We cant get real datamodel, so getting it from fake datamodel
     print('Fake datamodel:', fake_datamodel)
     data_model = hyper.Pymem.read_longlong(fake_datamodel + int(offsets['FakeDataModelToDataModel'], 16))
     print('Real datamodel:', data_model)
     wsAddr = hyper.Pymem.read_longlong(data_model + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(data_model, 'Workspace')
     print('Workspace:', wsAddr)
-    camAddr = hyper.Pymem.read_longlong(wsAddr + int(offsets['Camera'], 16)) #FindFirstChildOfClass(data_model, 'Camera')
+    camAddr = hyper.Pymem.read_longlong(wsAddr + int(offsets['Camera'], 16)) #FindFirstChildOfClass(wsAddr, 'Camera')
+    fovAddr = camAddr + int(offsets['FOV'], 16)
     print('Camera:', camAddr)
-    fovAddr = camAddr + 320
+    print('Pls wait while we getting lighting...')
+    lightingAddr = FindFirstChildOfClass(data_model, 'Lighting')
+    startFogAddr = lightingAddr + int(offsets['FogStart'], 16)
+    endFogAddr = lightingAddr + int(offsets['FogEnd'], 16)
+    print('Lighting service:', lightingAddr)
+    print('Injected successfully')
 
 startTime = 0
 humAddr = 0
@@ -184,7 +195,7 @@ humAddr = 0
 oldSpeed = '0'
 oldJp = '0'
 oldFov = '0'
-oldEsp = 0
+oldEsp = False
 
 def getHumAddr():
     global humAddr, startTime
@@ -192,43 +203,21 @@ def getHumAddr():
         humAddr = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16)) #By default camera subject will be humanoid. Shortening path from game.Players.LocalPlayer.Character.Humanoid to workspace.CurrentCamera.CameraSubject
         startTime = time()
 
-'''def setSpeed():
-    getHumAddr()
-    hyper.Pymem.write_float(humAddr + 928, float('inf'))
-    hyper.Pymem.write_float(humAddr + 456, float(speed_lbl.get()))
-
-def setJP():
-    getHumAddr()
-    hyper.Pymem.write_float(humAddr + 424, float(jp_lbl.get()))
-
-def setFOV():
-    hyper.Pymem.write_float(camAddr + 320, float(fov_lbl.get()))
-
-def espToggle():
-    getHumAddr()
-    if checkbox_var.get() == 1:
-        hyper.Pymem.write_int(humAddr + 0x1B8, int(0))
-        hyper.Pymem.write_float(humAddr+0x1B4, float('inf'))
-        hyper.Pymem.write_float(humAddr+0x190, float('inf'))
-    else:
-        hyper.Pymem.write_int(humAddr+0x1B8, int(2))
-        hyper.Pymem.write_float(humAddr+0x1B4, float(100))
-        hyper.Pymem.write_float(humAddr+0x190, float(100))'''
-
 def afterDeath():
     oldHumAddr = 0
     while camAddr == 0:
         sleep(1)
+    print('W')
     while True:
-        if checkbox_var3.get() == 1:
+        if window.AfterDeathApply.isChecked():
             hum = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
             if oldHumAddr != hum:
-                hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-                hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(speed_lbl.get()))
+                hyper.Pymem.write_float(hum + int(offsets['WalkSpeedCheck'], 16), float('inf'))
+                hyper.Pymem.write_float(hum + int(offsets['WalkSpeed'], 16), float(window.Speed.text()))
                 print('Wrote speed')
-                hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(jp_lbl.get()))
+                hyper.Pymem.write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.text()))
                 print('Wrote jump power')
-                if checkbox_var.get() == 1:
+                if window.ESP.isChecked() == 1:
                     hyper.Pymem.write_int(hum + 0x1B8, int(0))
                     hyper.Pymem.write_float(hum + 0x1B4, float('inf'))
                     hyper.Pymem.write_float(hum + 0x190, float('inf'))
@@ -241,24 +230,24 @@ def apply():
     global oldSpeed, oldJp, oldFov, oldEsp
     getHumAddr()
 
-    if fov_lbl.get() != oldFov:
-        hyper.Pymem.write_float(fovAddr, float(fov_lbl.get()))
+    if window.FOV.text() != oldFov:
+        hyper.Pymem.write_float(fovAddr, float(window.FOV.text()))
         print('Wrote FOV')
-        oldFov = fov_lbl.get()
+        oldFov = window.FOV.text()
 
-    if jp_lbl.get() != oldJp:
-        hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(jp_lbl.get()))
+    if window.Jumppower.text() != oldJp:
+        hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(window.Jumppower.text()))
         print('Wrote jump power')
-        oldJp = jp_lbl.get()
+        oldJp = window.Jumppower.text()
     
-    if speed_lbl.get() != oldSpeed:
+    if window.Speed.text() != oldSpeed:
         hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-        hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(speed_lbl.get()))
+        hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(window.Speed.text()))
         print('Wrote speed')
-        oldSpeed = speed_lbl.get()
+        oldSpeed = window.Speed.text()
 
-    if checkbox_var.get() != oldEsp:
-        if checkbox_var.get() == 1:
+    if window.ESP.isChecked() != oldEsp:
+        if window.ESP.isChecked():
             hyper.Pymem.write_int(humAddr + 0x1B8, int(0))
             hyper.Pymem.write_float(humAddr + 0x1B4, float('inf'))
             hyper.Pymem.write_float(humAddr + 0x190, float('inf'))
@@ -267,11 +256,28 @@ def apply():
             hyper.Pymem.write_float(humAddr + 0x1B4, float(100))
             hyper.Pymem.write_float(humAddr + 0x190, float(100))
         print('Wrote ESP')
-        oldEsp = checkbox_var.get()
+        oldEsp = window.ESP.isChecked()
+
+def delFog():
+    print('Removing fog...')
+    ChildrenOfInstance = GetChildren(lightingAddr)
+    print('Got children of lighting service!')
+    for i in ChildrenOfInstance:
+        try:
+            if GetClassName(i) == 'Atmosphere':
+                hyper.Pymem.write_float(i+0xE0, float('0'))
+                hyper.Pymem.write_float(i+0xE8, float('0'))
+                print('Wrote atmosphere')
+        except:
+            pass
+    
+    hyper.Pymem.write_float(endFogAddr, float('inf'))
+    hyper.Pymem.write_float(startFogAddr, float('inf'))
+    print('Fog removed')
 
 def reEnableEsp(event):
     if event.name == 'right ctrl':
-        if checkbox_var.get() == 1:
+        if window.ESP.isChecked():
             getHumAddr()
             hyper.Pymem.write_int(humAddr+0x1B8, int(0))
             hyper.Pymem.write_float(humAddr+0x1B4, float('inf'))
@@ -293,79 +299,18 @@ on_release(reEnableEsp)
 
 print('Inited! Creating GUI...')
 
-form = Tk()
-form.geometry("290x170")
-form.title("Roblox trainer")
-form.config(bg="black")
-form.attributes('-alpha', 0.9)
+app = QApplication([])
+window = MyApp()
+window.INJECT.clicked.connect(init)
+window.Apply.clicked.connect(apply)
+window.DelFog.clicked.connect(delFog)
+window.show()
 
-form.resizable(False, False)
-
-#-----------------------------------------------------------------------------------------
-
-btn_scan = Button(form, text="INJECT", command=init, bg="red4", fg="whitesmoke")
-btn_scan.place(x=10, y=10, width=130, height=35)
-btn_scan_font = Font(size=20, weight='bold')
-btn_scan['font'] = btn_scan_font
-
-btn_apply = Button(form, text="Apply", command=apply, bg="blue4", fg="whitesmoke")
-btn_apply.place(x=150, y=10, width=130, height=35)
-btn_apply_font = Font(size=20, weight='bold')
-btn_apply['font'] = btn_apply_font
-
-#-----------------------------------------------------------------------------------------
-
-speed_lbl = Entry(form, bg="black", fg="whitesmoke", justify='center')
-speed_lbl.place(x=10, y=50, width=130, height=35)
-speed_lbl.insert(0, "25")
-
-#btn_set_speed = Button(form, text="Set speed", command=setSpeed, bg="black", fg="whitesmoke")
-#btn_set_speed.place(x=150, y=50, width=130, height=35)
-
-#-----------------------------------------------------------------------------------------
-
-jp_lbl = Entry(form, bg="black", fg="whitesmoke", justify='center')
-jp_lbl.place(x=150, y=50, width=130, height=35)
-jp_lbl.insert(0, "70")
-
-#btn_set_jp = Button(form, text="Set jump power", command=setJP, bg="black", fg="whitesmoke")
-#btn_set_jp.place(x=150, y=90, width=130, height=35)
-
-#-----------------------------------------------------------------------------------------
-
-fov_lbl = Entry(form, bg="black", fg="whitesmoke", justify='center')
-fov_lbl.place(x=10, y=90, width=130, height=35)
-fov_lbl.insert(0, "1.5")
-
-#btn_set_fov = Button(form, text="Set FOV", command=setFOV, bg="black", fg="whitesmoke")
-#btn_set_fov.place(x=150, y=130, width=130, height=35)
-
-#-----------------------------------------------------------------------------------------
-
-checkbox_var = IntVar()
-checkbox = Checkbutton(form, text="Enable ESP", variable=checkbox_var, bg="black", fg="whitesmoke", selectcolor="black", activebackground="gray10", activeforeground="white", highlightthickness=0)
-checkbox.place(x=150, y=90, width=130, height=35)
-
-#-----------------------------------------------------------------------------------------
-
-checkbox_var2 = IntVar()
-checkbox2 = Checkbutton(form, text="Loop set FOV", variable=checkbox_var2, bg="black", fg="whitesmoke", selectcolor="black", activebackground="gray10", activeforeground="white", highlightthickness=0)
-checkbox2.place(x=10, y=130, width=130, height=35)
-
-#-----------------------------------------------------------------------------------------
-
-checkbox_var3 = IntVar()
-checkbox3 = Checkbutton(form, text="After death apply", variable=checkbox_var3, bg="black", fg="whitesmoke", selectcolor="black", activebackground="gray10", activeforeground="white", highlightthickness=0)
-checkbox3.place(x=150, y=130, width=130, height=35)
-
-#-----------------------------------------------------------------------------------------
-
-def loopFOV():
+def loops():
     while True:
-        if checkbox_var2.get() == 1:
-            hyper.Pymem.write_float(fovAddr, float(fov_lbl.get()))
+        if window.LoopSetFOV.isChecked():
+            hyper.Pymem.write_float(fovAddr, float(window.FOV.text()))
         sleep(1)
 
-Thread(target=loopFOV, daemon=True).start()
-
-form.mainloop()
+Thread(target=loops, daemon=True).start()
+app.exec_()

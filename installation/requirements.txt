@@ -2,3 +2,4 @@ pymem
 psutil 
 keyboard 
 requests
+PyQt5
