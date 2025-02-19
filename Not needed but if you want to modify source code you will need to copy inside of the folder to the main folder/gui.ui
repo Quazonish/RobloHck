@@ -352,16 +352,17 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <property name="font">
      <font>
       <family>Consolas</family>
-      <pointsize>6</pointsize>
+      <pointsize>9</pointsize>
       <weight>75</weight>
       <bold>true</bold>
      </font>
     </property>
     <property name="styleSheet">
-     <string notr="true">color: rgb(245, 245, 245)</string>
+     <string notr="true">color: rgb(245, 245, 245);</string>
     </property>
     <property name="text">
-     <string>After death apply</string>
+     <string>After death
+apply</string>
     </property>
     <property name="iconSize">
      <size>
