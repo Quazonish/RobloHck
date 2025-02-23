@@ -226,6 +226,7 @@ humAddr = 0
 
 hrpYaddr = 0
 hrpGravAddr = 0
+hrpYvel = 0
 
 flyEnabled = False
 
@@ -332,7 +333,7 @@ def reOpenRoblox():
         sleep(0.1)
 
 def flyToogle(state):
-    global hrpYaddr, hrpGravAddr, flyEnabled
+    global hrpYaddr, hrpGravAddr, hrpYvel, flyEnabled
     if state == 2:
         getHumAddr()
         char = hyper.Pymem.read_longlong(humAddr + int(offsets['Parent'], 16))
@@ -340,8 +341,11 @@ def flyToogle(state):
         primitive = hyper.Pymem.read_longlong(hrp + int(offsets['Primitive'], 16))
         hrpGravAddr = primitive + int(offsets['PrimitiveGravity'], 16)
         hyper.Pymem.write_float(hrpGravAddr, float(0))
-        hrpYaddr = hyper.Pymem.read_longlong(primitive+0x98)+0x88
+        shit = hyper.Pymem.read_longlong(primitive+0x98)
+        hrpYaddr = shit+0x88
+        hrpYvel = shit+0x94
         hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) + 5))
+        hyper.Pymem.write_float(hrpYvel, float(0))
         flyEnabled = True
         print('Fly enabled')
     elif state == 0:
@@ -351,10 +355,12 @@ def flyToogle(state):
 
 def flyUp():
     if flyEnabled:
+        hyper.Pymem.write_float(hrpYvel, float(0))
         hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) + float(window.Step.value())))
 
 def flyDown():
     if flyEnabled:
+        hyper.Pymem.write_float(hrpYvel, float(0))
         hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) - float(window.Step.value())))
 
 Thread(target=reOpenRoblox, daemon=True).start()

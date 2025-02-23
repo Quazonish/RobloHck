@@ -1,2 +1,3 @@
 Y pos = [[part+160]+98]+88 (HEX)
+Y velocity = [[part+160]+98]+94 (HEX)
 Grav = [part+160]+114 (HEX)
