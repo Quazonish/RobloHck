@@ -9,6 +9,7 @@ from keyboard import on_release
 from time import time, sleep
 from threading import Thread
 from requests import get
+import keyboard
 print('Loaded libs! Getting offsets...')
 offsets = get('https://offsets.ntgetwritewatch.workers.dev/offsets.json').json()
 print('Supported versions:')
@@ -22,6 +23,36 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
+        self.fly_up_key = self.FlyUpKey.keySequence().toString()
+        self.fly_down_key = self.FlyDownKey.keySequence().toString()
+
+        self.FlyUpKey.editingFinished.connect(self.update_fly_up_key)
+        self.FlyDownKey.editingFinished.connect(self.update_fly_down_key)
+
+        self.apply_keybinds()
+
+    def update_fly_up_key(self):
+        new_key = self.FlyUpKey.keySequence().toString()
+        if new_key and new_key != self.fly_up_key:
+            self.fly_up_key = new_key
+            self.apply_keybinds()
+
+    def update_fly_down_key(self):
+        new_key = self.FlyDownKey.keySequence().toString()
+        if new_key and new_key != self.fly_down_key:
+            self.fly_down_key = new_key
+            self.apply_keybinds()
+
+    def apply_keybinds(self):
+        print(f"Fly up keybind: {self.fly_up_key}")
+        print(f"Fly down keybind: {self.fly_down_key}")
+
+        keyboard.unhook_all()
+
+        if self.fly_up_key:
+            keyboard.add_hotkey(self.fly_up_key, flyUp)
+        if self.fly_down_key:
+            keyboard.add_hotkey(self.fly_down_key, flyDown)
 
 class hyper:
     def __init__(self, ProgramName=None):
@@ -55,12 +86,12 @@ class hyper:
         Address = Address
         if type(Address) == str:
             Address = self.h2d(Address)
-        
-        if is64Bit:
-            return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
-        if self.is64bit:
-            return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
-        return int.from_bytes(self.Pymem.read_bytes(Address, 4), "little")
+        return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
+        #if is64Bit:
+        #    return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
+        #if self.is64bit:
+        #    return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
+        #return int.from_bytes(self.Pymem.read_bytes(Address, 4), "little")
 
     def getRawProcesses(self):
         toreturn = []
@@ -117,7 +148,8 @@ childrenOffset = int(offsets['Children'], 16)
 def ReadRobloxString(ExpectedAddress: int) -> str:
     StringCount = hyper.Pymem.read_int(ExpectedAddress + 0x10)
     if StringCount > 15:
-        return hyper.Pymem.read_string(hyper.DRP(ExpectedAddress), StringCount)
+        shit = hyper.DRP(ExpectedAddress)
+        return hyper.Pymem.read_string(shit, StringCount)
     return hyper.Pymem.read_string(ExpectedAddress, StringCount)
 
 def GetClassName(Instance: int) -> str:
@@ -192,6 +224,11 @@ def init():
 startTime = 0
 humAddr = 0
 
+hrpYaddr = 0
+hrpGravAddr = 0
+
+flyEnabled = False
+
 oldSpeed = '0'
 oldJp = '0'
 oldFov = '0'
@@ -213,9 +250,9 @@ def afterDeath():
             hum = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
             if oldHumAddr != hum:
                 hyper.Pymem.write_float(hum + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-                hyper.Pymem.write_float(hum + int(offsets['WalkSpeed'], 16), float(window.Speed.text()))
+                hyper.Pymem.write_float(hum + int(offsets['WalkSpeed'], 16), float(window.Speed.value()))
                 print('Wrote speed')
-                hyper.Pymem.write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.text()))
+                hyper.Pymem.write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
                 print('Wrote jump power')
                 if window.ESP.isChecked() == 1:
                     hyper.Pymem.write_int(hum + 0x1B8, int(0))
@@ -230,21 +267,21 @@ def apply():
     global oldSpeed, oldJp, oldFov, oldEsp
     getHumAddr()
 
-    if window.FOV.text() != oldFov:
-        hyper.Pymem.write_float(fovAddr, float(window.FOV.text()))
+    if window.FOV.value() != oldFov:
+        hyper.Pymem.write_float(fovAddr, float(window.FOV.value()))
         print('Wrote FOV')
-        oldFov = window.FOV.text()
+        oldFov = window.FOV.value()
 
-    if window.Jumppower.text() != oldJp:
-        hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(window.Jumppower.text()))
+    if window.Jumppower.value() != oldJp:
+        hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
         print('Wrote jump power')
-        oldJp = window.Jumppower.text()
+        oldJp = window.Jumppower.value()
     
-    if window.Speed.text() != oldSpeed:
+    if window.Speed.value() != oldSpeed:
         hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-        hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(window.Speed.text()))
+        hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(window.Speed.value()))
         print('Wrote speed')
-        oldSpeed = window.Speed.text()
+        oldSpeed = window.Speed.value()
 
     if window.ESP.isChecked() != oldEsp:
         if window.ESP.isChecked():
@@ -294,6 +331,32 @@ def reOpenRoblox():
                 pass
         sleep(0.1)
 
+def flyToogle(state):
+    global hrpYaddr, hrpGravAddr, flyEnabled
+    if state == 2:
+        getHumAddr()
+        char = hyper.Pymem.read_longlong(humAddr + int(offsets['Parent'], 16))
+        hrp = FindFirstChild(char, 'HumanoidRootPart')
+        primitive = hyper.Pymem.read_longlong(hrp + int(offsets['Primitive'], 16))
+        hrpGravAddr = primitive + int(offsets['PrimitiveGravity'], 16)
+        hyper.Pymem.write_float(hrpGravAddr, float(0))
+        hrpYaddr = hyper.Pymem.read_longlong(primitive+0x98)+0x88
+        hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) + 5))
+        flyEnabled = True
+        print('Fly enabled')
+    elif state == 0:
+        hyper.Pymem.write_float(hrpGravAddr, float(196.2))
+        flyEnabled = True
+        print('Fly disabled')
+
+def flyUp():
+    if flyEnabled:
+        hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) + float(window.Step.value())))
+
+def flyDown():
+    if flyEnabled:
+        hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) - float(window.Step.value())))
+
 Thread(target=reOpenRoblox, daemon=True).start()
 on_release(reEnableEsp)
 
@@ -304,12 +367,15 @@ window = MyApp()
 window.INJECT.clicked.connect(init)
 window.Apply.clicked.connect(apply)
 window.DelFog.clicked.connect(delFog)
+window.FlyToogle.stateChanged.connect(flyToogle)
+window.FlyUp.clicked.connect(flyUp)
+window.FlyDown.clicked.connect(flyDown)
 window.show()
 
 def loops():
     while True:
         if window.LoopSetFOV.isChecked():
-            hyper.Pymem.write_float(fovAddr, float(window.FOV.text()))
+            hyper.Pymem.write_float(fovAddr, float(window.FOV.value()))
         sleep(1)
 
 Thread(target=loops, daemon=True).start()
