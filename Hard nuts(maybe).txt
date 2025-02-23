@@ -1,0 +1,2 @@
+Y pos = [[part+160]+98]+88 (HEX)
+Grav = [part+160]+114 (HEX)
