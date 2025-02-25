@@ -232,7 +232,6 @@ flyEnabled = False
 
 oldSpeed = '0'
 oldJp = '0'
-oldFov = '0'
 oldEsp = False
 
 def getHumAddr():
@@ -265,13 +264,8 @@ def afterDeath():
 Thread(target=afterDeath, daemon=True).start()
 
 def apply():
-    global oldSpeed, oldJp, oldFov, oldEsp
+    global oldSpeed, oldJp, oldEsp
     getHumAddr()
-
-    if window.FOV.value() != oldFov:
-        hyper.Pymem.write_float(fovAddr, float(window.FOV.value()))
-        print('Wrote FOV')
-        oldFov = window.FOV.value()
 
     if window.Jumppower.value() != oldJp:
         hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
@@ -363,6 +357,10 @@ def flyDown():
         hyper.Pymem.write_float(hrpYvel, float(0))
         hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) - float(window.Step.value())))
 
+def fovChange(val):
+    hyper.Pymem.write_float(fovAddr, float(val))
+    print('Wrote FOV')
+
 Thread(target=reOpenRoblox, daemon=True).start()
 on_release(reEnableEsp)
 
@@ -376,6 +374,7 @@ window.DelFog.clicked.connect(delFog)
 window.FlyToogle.stateChanged.connect(flyToogle)
 window.FlyUp.clicked.connect(flyUp)
 window.FlyDown.clicked.connect(flyDown)
+window.FOV.valueChanged.connect(fovChange)
 window.show()
 
 def loops():

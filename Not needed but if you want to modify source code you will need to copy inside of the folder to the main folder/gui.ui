@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
-    <height>305</height>
+    <width>430</width>
+    <height>220</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,20 +18,20 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>290</width>
-    <height>305</height>
+    <width>430</width>
+    <height>220</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>290</width>
-    <height>305</height>
+    <width>430</width>
+    <height>220</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
-    <width>290</width>
-    <height>225</height>
+    <width>430</width>
+    <height>220</height>
    </size>
   </property>
   <property name="font">
@@ -97,7 +97,7 @@ color: rgb(245, 245, 245);</string>
    <widget class="QPushButton" name="Apply">
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>290</x>
       <y>10</y>
       <width>130</width>
       <height>35</height>
@@ -230,8 +230,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QDoubleSpinBox" name="FOV">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>90</y>
+      <x>290</x>
+      <y>140</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -284,8 +284,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QCheckBox" name="ESP">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>90</y>
+      <x>290</x>
+      <y>50</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -318,10 +318,16 @@ color: rgb(245, 245, 245);</string>
     <property name="geometry">
      <rect>
       <x>0</x>
-      <y>130</y>
-      <width>290</width>
+      <y>90</y>
+      <width>430</width>
       <height>3</height>
      </rect>
+    </property>
+    <property name="sizeIncrement">
+     <size>
+      <width>0</width>
+      <height>0</height>
+     </size>
     </property>
     <property name="font">
      <font>
@@ -341,7 +347,7 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>140</y>
+      <y>100</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -373,8 +379,8 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="QCheckBox" name="AfterDeathApply">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>140</y>
+      <x>290</x>
+      <y>100</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -408,7 +414,7 @@ apply</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>180</y>
+      <y>140</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -440,7 +446,7 @@ color: rgb(245, 245, 245);</string>
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>180</y>
+      <y>100</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -472,8 +478,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QSpinBox" name="Step">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>220</y>
+      <x>150</x>
+      <y>140</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -524,7 +530,7 @@ color: rgb(245, 245, 245);</string>
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>220</y>
+      <y>180</y>
       <width>41</width>
       <height>35</height>
      </rect>
@@ -555,7 +561,7 @@ color: rgb(245, 245, 245);</string>
     <property name="geometry">
      <rect>
       <x>240</x>
-      <y>220</y>
+      <y>180</y>
       <width>41</width>
       <height>35</height>
      </rect>
@@ -586,7 +592,7 @@ color: rgb(245, 245, 245);</string>
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>260</y>
+      <y>180</y>
       <width>131</width>
       <height>41</height>
      </rect>
@@ -610,8 +616,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QKeySequenceEdit" name="FlyDownKey">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>260</y>
+      <x>290</x>
+      <y>180</y>
       <width>131</width>
       <height>41</height>
      </rect>
