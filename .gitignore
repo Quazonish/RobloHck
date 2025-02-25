@@ -4,3 +4,12 @@
 *pycache*
 __pycache__
 pycache
+/build
+/dist
+build
+dist
+*build*
+*dist*
+*.spec
+*.lnk
+external.zip
