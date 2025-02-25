@@ -1,7 +1,8 @@
 # Is this detected?
 I think <mark>yes🙁</mark>
 # How frequetly it updated?
-In my plans <mark>its updating by itself</mark> because it fetches offsets from some api that works
+In my plans <mark>its updating by itself</mark> because it fetches offsets from some api that works.
+Also I update it myself when I get new idea to add.
 # WTF is this?
 This is shitty homemade external/exploit that <mark>you can run everywhere</mark>
 # How to use?
