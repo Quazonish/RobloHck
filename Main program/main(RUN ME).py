@@ -44,9 +44,6 @@ class MyApp(QMainWindow, Ui_MainWindow):
             self.apply_keybinds()
 
     def apply_keybinds(self):
-        print(f"Fly up keybind: {self.fly_up_key}")
-        print(f"Fly down keybind: {self.fly_down_key}")
-
         keyboard.unhook_all()
 
         if self.fly_up_key:
@@ -87,11 +84,6 @@ class hyper:
         if type(Address) == str:
             Address = self.h2d(Address)
         return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
-        #if is64Bit:
-        #    return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
-        #if self.is64bit:
-        #    return int.from_bytes(self.Pymem.read_bytes(Address, 8), "little")
-        #return int.from_bytes(self.Pymem.read_bytes(Address, 4), "little")
 
     def getRawProcesses(self):
         toreturn = []
@@ -222,6 +214,7 @@ def init():
     print('Injected successfully')
 
 startTime = 0
+startTime2 = 0
 humAddr = 0
 
 hrpYaddr = 0
@@ -238,13 +231,23 @@ def getHumAddr():
     global humAddr, startTime
     if time()-startTime > 10:
         humAddr = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16)) #By default camera subject will be humanoid. Shortening path from game.Players.LocalPlayer.Character.Humanoid to workspace.CurrentCamera.CameraSubject
-        startTime = time()
+    startTime = time()
+def getHrpGravAddr():
+    global hrpGravAddr, humAddr, startTime, startTime2
+    if time()-startTime2 > 10:
+        humAddr = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
+        char = hyper.Pymem.read_longlong(humAddr + int(offsets['Parent'], 16))
+        hrp = FindFirstChild(char, 'HumanoidRootPart')
+        primitive = hyper.Pymem.read_longlong(hrp + int(offsets['Primitive'], 16))
+        hrpGravAddr = primitive + int(offsets['PrimitiveGravity'], 16)
+    startTime = time()
+    startTime2 = startTime
 
 def afterDeath():
     oldHumAddr = 0
     while camAddr == 0:
         sleep(1)
-    print('W')
+
     while True:
         if window.AfterDeathApply.isChecked():
             hum = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
@@ -297,8 +300,8 @@ def delFog():
     for i in ChildrenOfInstance:
         try:
             if GetClassName(i) == 'Atmosphere':
-                hyper.Pymem.write_float(i+0xE0, float('0'))
-                hyper.Pymem.write_float(i+0xE8, float('0'))
+                hyper.Pymem.write_float(i+0xE0, float(0))
+                hyper.Pymem.write_float(i+0xE8, float(0))
                 print('Wrote atmosphere')
         except:
             pass
@@ -307,7 +310,7 @@ def delFog():
     hyper.Pymem.write_float(startFogAddr, float('inf'))
     print('Fog removed')
 
-def reEnableEsp(event):
+def reEnableEspKeyBind(event):
     if event.name == 'right ctrl':
         if window.ESP.isChecked():
             getHumAddr()
@@ -315,6 +318,13 @@ def reEnableEsp(event):
             hyper.Pymem.write_float(humAddr+0x1B4, float('inf'))
             hyper.Pymem.write_float(humAddr+0x190, float('inf'))
             print('Wrote ESP')
+
+def reEnableEsp():
+    getHumAddr()
+    hyper.Pymem.write_int(humAddr+0x1B8, int(0))
+    hyper.Pymem.write_float(humAddr+0x1B4, float('inf'))
+    hyper.Pymem.write_float(humAddr+0x190, float('inf'))
+    print('Wrote ESP')
 
 def reOpenRoblox():
     while True:
@@ -361,8 +371,23 @@ def fovChange(val):
     hyper.Pymem.write_float(fovAddr, float(val))
     print('Wrote FOV')
 
+def gravChange(val):
+    getHrpGravAddr()
+    print(hrpGravAddr)
+    hyper.Pymem.write_float(hrpGravAddr, float(val))
+
+def resetChr():
+    getHumAddr()
+    hyper.Pymem.write_float(humAddr + int(offsets['Health'], 16), float(0))
+
+def reEnableEspBtnToogle(state):
+    if state == 2:
+        window.ReEsp.show()
+    elif state == 0:
+        window.ReEsp.hide()
+
 Thread(target=reOpenRoblox, daemon=True).start()
-on_release(reEnableEsp)
+on_release(reEnableEspKeyBind)
 
 print('Inited! Creating GUI...')
 
@@ -375,6 +400,10 @@ window.FlyToogle.stateChanged.connect(flyToogle)
 window.FlyUp.clicked.connect(flyUp)
 window.FlyDown.clicked.connect(flyDown)
 window.FOV.valueChanged.connect(fovChange)
+window.Gravity.valueChanged.connect(gravChange)
+window.Reset.clicked.connect(resetChr)
+window.ReEsp.clicked.connect(reEnableEsp)
+window.ESP.stateChanged.connect(reEnableEspBtnToogle)
 window.show()
 
 def loops():
@@ -384,4 +413,5 @@ def loops():
         sleep(1)
 
 Thread(target=loops, daemon=True).start()
+
 app.exec_()

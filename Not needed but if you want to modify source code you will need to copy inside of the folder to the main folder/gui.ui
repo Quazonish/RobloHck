@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>430</width>
-    <height>220</height>
+    <height>260</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,25 +19,28 @@
   <property name="minimumSize">
    <size>
     <width>430</width>
-    <height>220</height>
+    <height>260</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>430</width>
-    <height>220</height>
+    <height>260</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
     <width>430</width>
-    <height>220</height>
+    <height>260</height>
    </size>
   </property>
   <property name="font">
    <font>
     <family>Consolas</family>
    </font>
+  </property>
+  <property name="mouseTracking">
+   <bool>false</bool>
   </property>
   <property name="windowTitle">
    <string>RobloHck 3000</string>
@@ -63,6 +66,9 @@
      <family>Consolas</family>
     </font>
    </property>
+   <property name="mouseTracking">
+    <bool>false</bool>
+   </property>
    <widget class="QPushButton" name="INJECT">
     <property name="geometry">
      <rect>
@@ -85,6 +91,15 @@
       <weight>75</weight>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Press it before using cheat and after joining game</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(170, 0, 0);
@@ -117,6 +132,15 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Applies changes that are upper the line</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(0, 0, 127);
 color: rgb(245, 245, 245);</string>
@@ -142,11 +166,14 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
     <property name="toolTip">
-     <string>Speed</string>
+     <string>Changes your speed</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>3</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -193,11 +220,14 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
     <property name="toolTip">
-     <string>Jump power</string>
+     <string>How high you jump</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>3</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -244,11 +274,14 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
     <property name="toolTip">
-     <string>FOV</string>
+     <string>Field of view</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>3</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -298,6 +331,15 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Makes you able to see other players</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
     </property>
@@ -335,6 +377,15 @@ color: rgb(245, 245, 245);</string>
       <kerning>false</kerning>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Dick</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>1</number>
+    </property>
     <property name="styleSheet">
      <string notr="true">color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 255, 255));
 background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 255, 255));</string>
@@ -359,6 +410,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
       <weight>75</weight>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>If game always resets your FOV, you can use it!</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -392,6 +452,15 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
       <weight>75</weight>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Roblox can crash!!!</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245);</string>
@@ -434,6 +503,15 @@ apply</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Deletes fog</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>2</number>
+    </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(70, 70, 70);
 color: rgb(245, 245, 245);</string>
@@ -458,6 +536,15 @@ color: rgb(245, 245, 245);</string>
       <weight>75</weight>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Makes you able to fly</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>3</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245);</string>
@@ -492,8 +579,11 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
     <property name="toolTip">
-     <string>Step</string>
+     <string>How much you need to go up or down</string>
     </property>
     <property name="toolTipDuration">
      <number>5</number>
@@ -549,6 +639,15 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Go up</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>2</number>
+    </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(0, 165, 165);
 color: rgb(245, 245, 245);</string>
@@ -580,6 +679,15 @@ color: rgb(245, 245, 245);</string>
       <bold>true</bold>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Go down</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>2</number>
+    </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(115, 51, 0);
 color: rgb(245, 245, 245);</string>
@@ -602,6 +710,15 @@ color: rgb(245, 245, 245);</string>
       <family>Consolas</family>
       <pointsize>9</pointsize>
      </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Shortcut to go up</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
     </property>
     <property name="statusTip">
      <string>↑ keybind</string>
@@ -628,6 +745,15 @@ color: rgb(245, 245, 245);</string>
       <pointsize>9</pointsize>
      </font>
     </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Shortcut to go down</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
     <property name="statusTip">
      <string>↓ keybind</string>
     </property>
@@ -636,6 +762,143 @@ color: rgb(245, 245, 245);</string>
     </property>
     <property name="keySequence">
      <string extracomment="↓">Down</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ReEsp">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>10</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>20</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Re enables esp</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>3</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 127, 0);
+color: rgb(245, 245, 245);</string>
+    </property>
+    <property name="text">
+     <string>Re esp</string>
+    </property>
+   </widget>
+   <widget class="QDoubleSpinBox" name="Gravity">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>220</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>16</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Gravity</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>3</number>
+    </property>
+    <property name="autoFillBackground">
+     <bool>false</bool>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245);</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
+    </property>
+    <property name="text" stdset="0">
+     <string>196.20</string>
+    </property>
+    <property name="minimum">
+     <double>-1000.000000000000000</double>
+    </property>
+    <property name="maximum">
+     <double>1000.000000000000000</double>
+    </property>
+    <property name="singleStep">
+     <double>1.000000000000000</double>
+    </property>
+    <property name="value">
+     <double>196.199999999999989</double>
+    </property>
+    <property name="placeholderText" stdset="0">
+     <string>Gravity</string>
+    </property>
+    <property name="clearButtonEnabled" stdset="0">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Reset">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>220</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>20</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Resets character</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>3</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(200, 0, 0, 255), stop:0.502488 rgba(0, 0, 0, 255), stop:1 rgba(200, 0, 0, 255));
+color: rgb(245, 245, 245);</string>
+    </property>
+    <property name="text">
+     <string>Reset</string>
     </property>
    </widget>
   </widget>
