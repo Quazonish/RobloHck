@@ -197,20 +197,29 @@ data_model, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr = [
 
 def init():
     global data_model, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr
-    fake_datamodel = hyper.Pymem.read_longlong(baseAddr + int(offsets['FakeDataModelPointer'], 16)) #We cant get real datamodel, so getting it from fake datamodel
+    visEngine = hyper.Pymem.read_longlong(baseAddr + int(offsets['VisualEnginePointer'], 16))
+    print('Visual engine: ', visEngine)
+    
+    fake_datamodel = hyper.Pymem.read_longlong(visEngine + int(offsets['VisualEngineToDataModel1'], 16)) #We cant get real datamodel, so getting it from fake datamodel
     print('Fake datamodel:', fake_datamodel)
-    data_model = hyper.Pymem.read_longlong(fake_datamodel + int(offsets['FakeDataModelToDataModel'], 16))
+    
+    data_model = hyper.Pymem.read_longlong(fake_datamodel + int(offsets['VisualEngineToDataModel2'], 16))
     print('Real datamodel:', data_model)
+    
     wsAddr = hyper.Pymem.read_longlong(data_model + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(data_model, 'Workspace')
     print('Workspace:', wsAddr)
+    
     camAddr = hyper.Pymem.read_longlong(wsAddr + int(offsets['Camera'], 16)) #FindFirstChildOfClass(wsAddr, 'Camera')
     fovAddr = camAddr + int(offsets['FOV'], 16)
     print('Camera:', camAddr)
+    
     print('Pls wait while we getting lighting...')
     lightingAddr = FindFirstChildOfClass(data_model, 'Lighting')
+    
     startFogAddr = lightingAddr + int(offsets['FogStart'], 16)
     endFogAddr = lightingAddr + int(offsets['FogEnd'], 16)
     print('Lighting service:', lightingAddr)
+    
     print('Injected successfully')
 
 startTime = 0
