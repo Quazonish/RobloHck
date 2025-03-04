@@ -9,7 +9,7 @@ from keyboard import on_release
 from time import time, sleep
 from threading import Thread
 from requests import get
-import keyboard
+#import keyboard
 print('Loaded libs! Getting offsets...')
 offsets = get('https://offsets.ntgetwritewatch.workers.dev/offsets.json').json()
 print('Supported versions:')
@@ -23,7 +23,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        self.fly_up_key = self.FlyUpKey.keySequence().toString()
+        '''self.fly_up_key = self.FlyUpKey.keySequence().toString()
         self.fly_down_key = self.FlyDownKey.keySequence().toString()
 
         self.FlyUpKey.editingFinished.connect(self.update_fly_up_key)
@@ -49,7 +49,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
         if self.fly_up_key:
             keyboard.add_hotkey(self.fly_up_key, flyUp)
         if self.fly_down_key:
-            keyboard.add_hotkey(self.fly_down_key, flyDown)
+            keyboard.add_hotkey(self.fly_down_key, flyDown)'''
 
 class hyper:
     def __init__(self, ProgramName=None):
@@ -126,7 +126,7 @@ class hyper:
                 for module in hyper.Pymem.list_modules():
                     if module.name == "RobloxPlayerBeta.exe":
                         baseAddr = module.lpBaseOfDll
-                print('Roblox base addr:', baseAddr)
+                print(f'Roblox base addr: {baseAddr:x}')
                 return True
         return False
 
@@ -193,44 +193,44 @@ def FindFirstChildOfClass(Instance: int, ClassName: str) -> int:
         except:
             pass
 
-data_model, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr = [0] * 7
+dataModel, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr = [0] * 7
 
 def init():
-    global data_model, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr
+    global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr
     visEngine = hyper.Pymem.read_longlong(baseAddr + int(offsets['VisualEnginePointer'], 16))
-    print('Visual engine: ', visEngine)
+    print(f'Visual engine: {visEngine:x}')
     
-    fake_datamodel = hyper.Pymem.read_longlong(visEngine + int(offsets['VisualEngineToDataModel1'], 16)) #We cant get real datamodel, so getting it from fake datamodel
-    print('Fake datamodel:', fake_datamodel)
+    fakeDatamodel = hyper.Pymem.read_longlong(visEngine + int(offsets['VisualEngineToDataModel1'], 16))
+    print(f'Fake datamodel: {fakeDatamodel:x}')
     
-    data_model = hyper.Pymem.read_longlong(fake_datamodel + int(offsets['VisualEngineToDataModel2'], 16))
-    print('Real datamodel:', data_model)
+    dataModel = hyper.Pymem.read_longlong(fakeDatamodel + int(offsets['VisualEngineToDataModel2'], 16))
+    print(f'Real datamodel: {dataModel:x}')
     
-    wsAddr = hyper.Pymem.read_longlong(data_model + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(data_model, 'Workspace')
-    print('Workspace:', wsAddr)
+    wsAddr = hyper.Pymem.read_longlong(dataModel + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(dataModel, 'Workspace')
+    print(f'Workspace: {wsAddr:x}')
     
     camAddr = hyper.Pymem.read_longlong(wsAddr + int(offsets['Camera'], 16)) #FindFirstChildOfClass(wsAddr, 'Camera')
     fovAddr = camAddr + int(offsets['FOV'], 16)
-    print('Camera:', camAddr)
+    print(f'Camera: {camAddr:x}')
     
     print('Pls wait while we getting lighting...')
-    lightingAddr = FindFirstChildOfClass(data_model, 'Lighting')
+    lightingAddr = FindFirstChildOfClass(dataModel, 'Lighting')
     
     startFogAddr = lightingAddr + int(offsets['FogStart'], 16)
     endFogAddr = lightingAddr + int(offsets['FogEnd'], 16)
-    print('Lighting service:', lightingAddr)
+    print(f'Lighting service: {lightingAddr:x}')
     
-    print('Injected successfully')
+    print('Injected successfully\n-------------------------------')
 
 startTime = 0
 startTime2 = 0
 humAddr = 0
 
-hrpYaddr = 0
+#hrpYaddr = 0
 hrpGravAddr = 0
-hrpYvel = 0
+#hrpYvel = 0
 
-flyEnabled = False
+#flyEnabled = False
 
 oldSpeed = '0'
 oldJp = '0'
@@ -345,7 +345,7 @@ def reOpenRoblox():
                 pass
         sleep(0.1)
 
-def flyToogle(state):
+'''def flyToogle(state):
     global hrpYaddr, hrpGravAddr, hrpYvel, flyEnabled
     if state == 2:
         getHumAddr()
@@ -374,7 +374,7 @@ def flyUp():
 def flyDown():
     if flyEnabled:
         hyper.Pymem.write_float(hrpYvel, float(0))
-        hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) - float(window.Step.value())))
+        hyper.Pymem.write_float(hrpYaddr, float(hyper.Pymem.read_float(hrpYaddr) - float(window.Step.value())))'''
 
 def fovChange(val):
     hyper.Pymem.write_float(fovAddr, float(val))
@@ -382,8 +382,8 @@ def fovChange(val):
 
 def gravChange(val):
     getHrpGravAddr()
-    print(hrpGravAddr)
     hyper.Pymem.write_float(hrpGravAddr, float(val))
+    print('Wrote grav')
 
 def resetChr():
     getHumAddr()
@@ -405,9 +405,9 @@ window = MyApp()
 window.INJECT.clicked.connect(init)
 window.Apply.clicked.connect(apply)
 window.DelFog.clicked.connect(delFog)
-window.FlyToogle.stateChanged.connect(flyToogle)
-window.FlyUp.clicked.connect(flyUp)
-window.FlyDown.clicked.connect(flyDown)
+#window.FlyToogle.stateChanged.connect(flyToogle)
+#window.FlyUp.clicked.connect(flyUp)
+#window.FlyDown.clicked.connect(flyDown)
 window.FOV.valueChanged.connect(fovChange)
 window.Gravity.valueChanged.connect(gravChange)
 window.Reset.clicked.connect(resetChr)
