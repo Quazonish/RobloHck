@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
-    <height>220</height>
+    <width>430</width>
+    <height>185</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,20 +18,20 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>290</width>
-    <height>220</height>
+    <width>430</width>
+    <height>185</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>290</width>
-    <height>220</height>
+    <width>430</width>
+    <height>185</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
-    <width>290</width>
-    <height>220</height>
+    <width>430</width>
+    <height>185</height>
    </size>
   </property>
   <property name="font">
@@ -112,7 +112,7 @@ color: rgb(245, 245, 245);</string>
    <widget class="QPushButton" name="Apply">
     <property name="geometry">
      <rect>
-      <x>150</x>
+      <x>290</x>
       <y>10</y>
       <width>130</width>
       <height>35</height>
@@ -260,8 +260,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QDoubleSpinBox" name="FOV">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>180</y>
+      <x>290</x>
+      <y>140</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -314,13 +314,55 @@ color: rgb(245, 245, 245);</string>
      <bool>true</bool>
     </property>
    </widget>
+   <widget class="QCheckBox" name="ESP">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>50</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Makes you able to see other players</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Enable ESP</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>true</bool>
+    </property>
+   </widget>
    <widget class="Line" name="line">
     <property name="geometry">
      <rect>
       <x>0</x>
       <y>90</y>
-      <width>281</width>
-      <height>2</height>
+      <width>430</width>
+      <height>3</height>
      </rect>
     </property>
     <property name="sizeIncrement">
@@ -397,8 +439,8 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="QCheckBox" name="AfterDeathApply">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>180</y>
+      <x>290</x>
+      <y>100</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -476,6 +518,46 @@ color: rgb(245, 245, 245);</string>
     </property>
     <property name="text">
      <string>Remove fog</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="ReEsp">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>10</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>20</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Re enables esp</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>3</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(0, 127, 0);
+color: rgb(245, 245, 245);</string>
+    </property>
+    <property name="text">
+     <string>Re esp</string>
     </property>
    </widget>
    <widget class="QDoubleSpinBox" name="Gravity">

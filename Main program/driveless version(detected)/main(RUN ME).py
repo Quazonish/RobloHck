@@ -5,7 +5,7 @@ from ctypes import windll
 from psutil import pid_exists
 from gui import Ui_MainWindow
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from keyboard import on_release
+#from keyboard import on_release
 from time import time, sleep
 from threading import Thread
 from requests import get
@@ -234,7 +234,7 @@ hrpGravAddr = 0
 
 oldSpeed = '0'
 oldJp = '0'
-oldEsp = False
+#oldEsp = False
 
 def getHumAddr():
     global humAddr, startTime
@@ -266,17 +266,17 @@ def afterDeath():
                 print('Wrote speed')
                 hyper.Pymem.write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
                 print('Wrote jump power')
-                if window.ESP.isChecked() == 1:
+                '''if window.ESP.isChecked() == 1:
                     hyper.Pymem.write_int(hum + 0x1B8, int(0))
                     hyper.Pymem.write_float(hum + 0x1B4, float('inf'))
                     hyper.Pymem.write_float(hum + 0x190, float('inf'))
-                    print('Wrote ESP')
+                    print('Wrote ESP')'''
                 oldHumAddr = hum
         sleep(1)
 Thread(target=afterDeath, daemon=True).start()
 
 def apply():
-    global oldSpeed, oldJp, oldEsp
+    global oldSpeed, oldJp#, oldEsp
     getHumAddr()
 
     if window.Jumppower.value() != oldJp:
@@ -290,7 +290,7 @@ def apply():
         print('Wrote speed')
         oldSpeed = window.Speed.value()
 
-    if window.ESP.isChecked() != oldEsp:
+    '''if window.ESP.isChecked() != oldEsp:
         if window.ESP.isChecked():
             hyper.Pymem.write_int(humAddr + 0x1B8, int(0))
             hyper.Pymem.write_float(humAddr + 0x1B4, float('inf'))
@@ -300,7 +300,7 @@ def apply():
             hyper.Pymem.write_float(humAddr + 0x1B4, float(100))
             hyper.Pymem.write_float(humAddr + 0x190, float(100))
         print('Wrote ESP')
-        oldEsp = window.ESP.isChecked()
+        oldEsp = window.ESP.isChecked()'''
 
 def delFog():
     print('Removing fog...')
@@ -319,7 +319,7 @@ def delFog():
     hyper.Pymem.write_float(startFogAddr, float('inf'))
     print('Fog removed')
 
-def reEnableEspKeyBind(event):
+'''def reEnableEspKeyBind(event):
     if event.name == 'right ctrl':
         if window.ESP.isChecked():
             getHumAddr()
@@ -333,7 +333,7 @@ def reEnableEsp():
     hyper.Pymem.write_int(humAddr+0x1B8, int(0))
     hyper.Pymem.write_float(humAddr+0x1B4, float('inf'))
     hyper.Pymem.write_float(humAddr+0x190, float('inf'))
-    print('Wrote ESP')
+    print('Wrote ESP')'''
 
 def reOpenRoblox():
     while True:
@@ -389,14 +389,14 @@ def resetChr():
     getHumAddr()
     hyper.Pymem.write_float(humAddr + int(offsets['Health'], 16), float(0))
 
-def reEnableEspBtnToogle(state):
+'''def reEnableEspBtnToogle(state):
     if state == 2:
         window.ReEsp.show()
     elif state == 0:
-        window.ReEsp.hide()
+        window.ReEsp.hide()'''
 
 Thread(target=reOpenRoblox, daemon=True).start()
-on_release(reEnableEspKeyBind)
+#on_release(reEnableEspKeyBind)
 
 print('Inited! Creating GUI...')
 
@@ -411,8 +411,8 @@ window.DelFog.clicked.connect(delFog)
 window.FOV.valueChanged.connect(fovChange)
 window.Gravity.valueChanged.connect(gravChange)
 window.Reset.clicked.connect(resetChr)
-window.ReEsp.clicked.connect(reEnableEsp)
-window.ESP.stateChanged.connect(reEnableEspBtnToogle)
+#window.ReEsp.clicked.connect(reEnableEsp)
+#window.ESP.stateChanged.connect(reEnableEspBtnToogle)
 window.show()
 
 def loops():
