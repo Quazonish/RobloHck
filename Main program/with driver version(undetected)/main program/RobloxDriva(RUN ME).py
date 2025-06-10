@@ -229,7 +229,7 @@ def read_int4(address: int) -> int:
     return int.from_bytes(read(address, 4), "little")
 
 def write_int4(address: int, value: int) -> int:
-    return write(address, value.to_bytes(4))
+    return write(address, value.to_bytes(4, 'little'))
 
 def read_float(address: int) -> float:
     return unpack_from("<f", read(address, 4))[0]
