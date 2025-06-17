@@ -197,13 +197,10 @@ dataModel, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr = [0
 
 def init():
     global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, startFogAddr, endFogAddr
-    visEngine = hyper.Pymem.read_longlong(baseAddr + int(offsets['VisualEnginePointer'], 16))
-    print(f'Visual engine: {visEngine:x}')
-    
-    fakeDatamodel = hyper.Pymem.read_longlong(visEngine + int(offsets['VisualEngineToDataModel1'], 16))
+    fakeDatamodel = hyper.Pymem.read_longlong(baseAddr + int(offsets['FakeDataModelPointer'], 16))
     print(f'Fake datamodel: {fakeDatamodel:x}')
     
-    dataModel = hyper.Pymem.read_longlong(fakeDatamodel + int(offsets['VisualEngineToDataModel2'], 16))
+    dataModel = hyper.Pymem.read_longlong(fakeDatamodel + int(offsets['FakeDataModelToDataModel'], 16))
     print(f'Real datamodel: {dataModel:x}')
     
     wsAddr = hyper.Pymem.read_longlong(dataModel + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(dataModel, 'Workspace')
@@ -223,34 +220,34 @@ def init():
     print('Injected successfully\n-------------------------------')
 
 startTime = 0
-startTime2 = 0
 humAddr = 0
 
 #hrpYaddr = 0
-hrpGravAddr = 0
+#hrpGravAddr = 0
+hrpAddr = 0
 #hrpYvel = 0
 
 #flyEnabled = False
 
-oldSpeed = '0'
-oldJp = '0'
+#oldSpeed = '0'
+#oldJp = '0'
 #oldEsp = False
 
-def getHumAddr():
+def getHumAddr(changeTime = True):
     global humAddr, startTime
     if time()-startTime > 10:
         humAddr = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16)) #By default camera subject will be humanoid. Shortening path from game.Players.LocalPlayer.Character.Humanoid to workspace.CurrentCamera.CameraSubject
-    startTime = time()
-def getHrpGravAddr():
-    global hrpGravAddr, humAddr, startTime, startTime2
-    if time()-startTime2 > 10:
+    if changeTime:
+        startTime = time()
+
+def getHrpAddr(changeTime = True):
+    global hrpAddr, humAddr, startTime
+    if time()-startTime > 10:
         humAddr = hyper.Pymem.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
         char = hyper.Pymem.read_longlong(humAddr + int(offsets['Parent'], 16))
-        hrp = FindFirstChild(char, 'HumanoidRootPart')
-        primitive = hyper.Pymem.read_longlong(hrp + int(offsets['Primitive'], 16))
-        hrpGravAddr = primitive + int(offsets['PrimitiveGravity'], 16)
-    startTime = time()
-    startTime2 = startTime
+        hrpAddr = FindFirstChild(char, 'HumanoidRootPart')
+    if changeTime:
+        startTime = time()
 
 def afterDeath():
     oldHumAddr = 0
@@ -275,7 +272,7 @@ def afterDeath():
         sleep(1)
 Thread(target=afterDeath, daemon=True).start()
 
-def apply():
+'''def apply():
     global oldSpeed, oldJp#, oldEsp
     getHumAddr()
 
@@ -290,7 +287,7 @@ def apply():
         print('Wrote speed')
         oldSpeed = window.Speed.value()
 
-    '''if window.ESP.isChecked() != oldEsp:
+    if window.ESP.isChecked() != oldEsp:
         if window.ESP.isChecked():
             hyper.Pymem.write_int(humAddr + 0x1B8, int(0))
             hyper.Pymem.write_float(humAddr + 0x1B4, float('inf'))
@@ -301,6 +298,17 @@ def apply():
             hyper.Pymem.write_float(humAddr + 0x190, float(100))
         print('Wrote ESP')
         oldEsp = window.ESP.isChecked()'''
+
+def speedChange(val):
+    getHumAddr()
+    hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
+    hyper.Pymem.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(val))
+    print('Wrote speed')
+
+def jpChange(val):
+    getHumAddr()
+    hyper.Pymem.write_float(humAddr + int(offsets['JumpPower'], 16), float(val))
+    print('Wrote jump power')
 
 def delFog():
     print('Removing fog...')
@@ -381,8 +389,8 @@ def fovChange(val):
     print('Wrote FOV')
 
 def gravChange(val):
-    getHrpGravAddr()
-    hyper.Pymem.write_float(hrpGravAddr, float(val))
+    getHrpAddr()
+    hyper.Pymem.write_float(hyper.Pymem.read_longlong(hrpAddr + int(offsets['Primitive'], 16)) + int(offsets['PrimitiveGravity'], 16), float(val))
     print('Wrote grav')
 
 def resetChr():
@@ -403,7 +411,9 @@ print('Inited! Creating GUI...')
 app = QApplication([])
 window = MyApp()
 window.INJECT.clicked.connect(init)
-window.Apply.clicked.connect(apply)
+#window.Apply.clicked.connect(apply)
+window.Speed.valueChanged.connect(speedChange)
+window.Jumppower.valueChanged.connect(jpChange)
 window.DelFog.clicked.connect(delFog)
 #window.FlyToogle.stateChanged.connect(flyToogle)
 #window.FlyUp.clicked.connect(flyUp)
@@ -419,7 +429,19 @@ def loops():
     while True:
         if window.LoopSetFOV.isChecked():
             hyper.Pymem.write_float(fovAddr, float(window.FOV.value()))
-        sleep(1)
+        if window.Noclip.isChecked():
+            getHumAddr(False)
+            ChildrenOfInstance = GetChildren(hyper.Pymem.read_longlong(humAddr + int(offsets['Parent'], 16)))
+            for i in ChildrenOfInstance:
+                try:
+                    name = GetName(i)
+                    #print(name)
+                    if name == 'HumanoidRootPart' or name == 'UpperTorso' or name == 'LowerTorso' or name == 'Torso':
+                        primitive = hyper.Pymem.read_longlong(i + int(offsets['Primitive'], 16))
+                        hyper.Pymem.write_bytes(primitive + int(offsets['CanCollide'], 16), b'\x00', 1)
+                except:
+                    pass
+        #sleep(1)
 
 Thread(target=loops, daemon=True).start()
 

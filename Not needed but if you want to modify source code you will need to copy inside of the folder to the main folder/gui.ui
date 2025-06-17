@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>290</width>
-    <height>220</height>
+    <width>425</width>
+    <height>170</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,20 +18,20 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>290</width>
-    <height>220</height>
+    <width>425</width>
+    <height>170</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
-    <width>290</width>
-    <height>220</height>
+    <width>425</width>
+    <height>170</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
-    <width>290</width>
-    <height>220</height>
+    <width>425</width>
+    <height>170</height>
    </size>
   </property>
   <property name="font">
@@ -107,46 +107,6 @@ color: rgb(245, 245, 245);</string>
     </property>
     <property name="text">
      <string>INJECT</string>
-    </property>
-   </widget>
-   <widget class="QPushButton" name="Apply">
-    <property name="geometry">
-     <rect>
-      <x>150</x>
-      <y>10</y>
-      <width>130</width>
-      <height>35</height>
-     </rect>
-    </property>
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
-    <property name="font">
-     <font>
-      <family>Consolas</family>
-      <pointsize>20</pointsize>
-      <weight>75</weight>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="toolTip">
-     <string>Applies changes that are upper the line</string>
-    </property>
-    <property name="toolTipDuration">
-     <number>5</number>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">background-color: rgb(0, 0, 127);
-color: rgb(245, 245, 245);</string>
-    </property>
-    <property name="text">
-     <string>Apply</string>
     </property>
    </widget>
    <widget class="QSpinBox" name="Speed">
@@ -260,8 +220,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QDoubleSpinBox" name="FOV">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>180</y>
+      <x>290</x>
+      <y>50</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -314,49 +274,11 @@ color: rgb(245, 245, 245);</string>
      <bool>true</bool>
     </property>
    </widget>
-   <widget class="Line" name="line">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>90</y>
-      <width>281</width>
-      <height>2</height>
-     </rect>
-    </property>
-    <property name="sizeIncrement">
-     <size>
-      <width>0</width>
-      <height>0</height>
-     </size>
-    </property>
-    <property name="font">
-     <font>
-      <family>Consolas</family>
-      <kerning>false</kerning>
-     </font>
-    </property>
-    <property name="mouseTracking">
-     <bool>true</bool>
-    </property>
-    <property name="toolTip">
-     <string>Dick</string>
-    </property>
-    <property name="toolTipDuration">
-     <number>1</number>
-    </property>
-    <property name="styleSheet">
-     <string notr="true">color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 255, 255));
-background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), stop:1 rgba(0, 0, 255, 255));</string>
-    </property>
-    <property name="orientation">
-     <enum>Qt::Horizontal</enum>
-    </property>
-   </widget>
    <widget class="QCheckBox" name="LoopSetFOV">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>100</y>
+      <x>290</x>
+      <y>90</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -397,8 +319,8 @@ background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgb
    <widget class="QCheckBox" name="AfterDeathApply">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>180</y>
+      <x>150</x>
+      <y>90</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -440,8 +362,8 @@ apply</string>
    <widget class="QPushButton" name="DelFog">
     <property name="geometry">
      <rect>
-      <x>10</x>
-      <y>140</y>
+      <x>290</x>
+      <y>10</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -471,7 +393,7 @@ apply</string>
      <number>2</number>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: rgb(70, 70, 70);
+     <string notr="true">background-color: rgb(0, 0, 127);
 color: rgb(245, 245, 245);</string>
     </property>
     <property name="text">
@@ -481,8 +403,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QDoubleSpinBox" name="Gravity">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>100</y>
+      <x>10</x>
+      <y>90</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -539,7 +461,7 @@ color: rgb(245, 245, 245);</string>
     <property name="geometry">
      <rect>
       <x>150</x>
-      <y>140</y>
+      <y>10</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -568,11 +490,53 @@ color: rgb(245, 245, 245);</string>
      <number>3</number>
     </property>
     <property name="styleSheet">
-     <string notr="true">background-color: qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(200, 0, 0, 255), stop:0.502488 rgba(0, 0, 0, 255), stop:1 rgba(200, 0, 0, 255));
+     <string notr="true">background-color: rgb(0, 85, 0);
 color: rgb(245, 245, 245);</string>
     </property>
     <property name="text">
      <string>Reset</string>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="Noclip">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>130</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>18</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Makes you able go through walls</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Noclip</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
     </property>
    </widget>
   </widget>

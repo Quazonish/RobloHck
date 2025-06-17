@@ -11,15 +11,9 @@ from PyQt5.QtWidgets import QApplication, QMainWindow
 #from keyboard import on_release
 from requests import get
 
-startTime = 0
-startTime2 = 0
-humAddr = 0
-
 hrpGravAddr = 0
-
-oldSpeed = '0'
-oldJp = '0'
-#oldEsp = False
+humAddr = 0
+hrpAddr = 0
 
 class Requests(Structure):
     _fields_ = [
@@ -237,6 +231,9 @@ def read_float(address: int) -> float:
 def write_float(address: int, value: float) -> int:
     return write(address, pack("<f", value))
 
+def write_bool(address: int, value: bool) -> int:
+    return write(address, b'\x01' if value else b'\x00')
+
 def h2d(hz: str, bit: int = 16) -> int:
     if type(hz) == int:
         return hz
@@ -295,12 +292,13 @@ def GetChildren(Instance: int) -> str:
     return ChildrenInstance
 
 def FindFirstChild(Instance: int, ChildName: str) -> int:
-    print(Instance, ChildName)
     ChildrenOfInstance = GetChildren(Instance)
     for i in ChildrenOfInstance:
-        print(GetName(i))
-        if GetName(i) == ChildName:
-            return i
+        try:
+            if GetName(i) == ChildName:
+                return i
+        except:
+            pass
 
 def FindFirstChildOfClass(Instance: int, ClassName: str) -> int:
     ChildrenOfInstance = GetChildren(Instance)
@@ -348,7 +346,7 @@ def init():
     
     print('Injected successfully\n-------------------------------')
 
-def apply():
+'''def apply():
     global oldSpeed, oldJp#, oldEsp
     getHumAddr()
 
@@ -363,7 +361,7 @@ def apply():
         print('Wrote speed')
         oldSpeed = window.Speed.value()
 
-    '''if window.ESP.isChecked() != oldEsp:
+    if window.ESP.isChecked() != oldEsp:
         if window.ESP.isChecked():
             print('ESP checked')
             #write_int4(humAddr + int(offsets['HealthDisplayDistance'], 16)+4, int(0)) #no fix for now
@@ -376,26 +374,33 @@ def apply():
             write_float(humAddr + int(offsets['NameDisplayDistance'], 16), float(100))
         print('Wrote ESP')
         oldEsp = window.ESP.isChecked()'''
+def speedChange(val):
+    getHumAddr()
+    write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
+    write_float(humAddr + int(offsets['WalkSpeed'], 16), float(val))
+    print('Wrote speed')
 
-def getHumAddr():
+def jpChange(val):
+    getHumAddr()
+    write_float(humAddr + int(offsets['JumpPower'], 16), float(val))
+    print('Wrote jump power')
+
+startTime = 0
+def getHumAddr(changeTime=True):
     global humAddr, startTime
     if time()-startTime > 10:
         humAddr = read_int8(camAddr + int(offsets['CameraSubject'], 16)) #By default camera subject will be humanoid. Shortening path from game.Players.LocalPlayer.Character.Humanoid to workspace.CurrentCamera.CameraSubject
-    startTime = time()
+    if changeTime:
+        startTime = time()
 
-def getHrpGravAddr():
-    global hrpGravAddr, humAddr, startTime, startTime2
-    if time()-startTime2 > 10:
+def getHrpAddr(changeTime=True):
+    global hrpAddr, humAddr, startTime
+    if time()-startTime > 10:
         humAddr = read_int8(camAddr + int(offsets['CameraSubject'], 16))
-        print(humAddr)
         char = read_int8(humAddr + int(offsets['Parent'], 16))
-        print(char)
-        hrp = FindFirstChild(char, 'HumanoidRootPart')
-        print(hrp)
-        primitive = read_int8(hrp + int(offsets['Primitive'], 16))
-        hrpGravAddr = primitive + int(offsets['PrimitiveGravity'], 16)
-    startTime = time()
-    startTime2 = startTime
+        hrpAddr = FindFirstChild(char, 'HumanoidRootPart')
+    if changeTime:
+        startTime = time()
 
 def afterDeath():
     oldHumAddr = 0
@@ -458,8 +463,8 @@ def fovChange(val):
     print('Wrote FOV')
 
 def gravChange(val):
-    getHrpGravAddr()
-    write_float(hrpGravAddr, float(val))
+    getHrpAddr()
+    write_float(read_int8(hrpAddr + int(offsets['Primitive'], 16)) + int(offsets['PrimitiveGravity'], 16), float(val))
     print('Wrote grav')
 
 def resetChr():
@@ -489,7 +494,9 @@ print('Inited! Creating GUI...')
 app = QApplication([])
 window = MyApp()
 window.INJECT.clicked.connect(init)
-window.Apply.clicked.connect(apply)
+#window.Apply.clicked.connect(apply)
+window.Speed.valueChanged.connect(speedChange)
+window.Jumppower.valueChanged.connect(jpChange)
 window.DelFog.clicked.connect(delFog)
 window.FOV.valueChanged.connect(fovChange)
 window.Gravity.valueChanged.connect(gravChange)
@@ -502,7 +509,18 @@ def loops():
     while True:
         if window.LoopSetFOV.isChecked():
             write_float(fovAddr, float(window.FOV.value()))
-        sleep(1)
+        if window.Noclip.isChecked():
+            getHumAddr(False)
+            ChildrenOfInstance = GetChildren(read_int8(humAddr + int(offsets['Parent'], 16)))
+            for i in ChildrenOfInstance:
+                try:
+                    name = GetName(i)
+                    if name == 'HumanoidRootPart' or name == 'UpperTorso' or name == 'LowerTorso' or name == 'Torso':
+                        primitive = read_int8(i + int(offsets['Primitive'], 16))
+                        write_bool(primitive + int(offsets['CanCollide'], 16), False)
+                except:
+                    pass
+        #sleep(1)
 
 Thread(target=loops, daemon=True).start()
 
