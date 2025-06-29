@@ -38,7 +38,6 @@ Thread(target=background_process_monitor, daemon=True).start()
 
 def init():
     global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camLVAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr
-    print(baseAddr)
     fakeDatamodel = pm.read_longlong(baseAddr + int(offsets['FakeDataModelPointer'], 16))
     print(f'Fake datamodel: {fakeDatamodel:x}')
 
@@ -52,6 +51,10 @@ def init():
     fovAddr = camAddr + int(offsets['FOV'], 16)
     camLVAddr = pm.read_longlong(wsAddr + int(offsets['Camera'], 16)) + int(offsets['CameraRotation'], 16)
     print(f'Camera: {camAddr:x}')
+
+    visualEngine = pm.read_longlong(baseAddr + int(offsets['VisualEnginePointer'], 16))
+    matrixAddr = visualEngine + int(offsets['viewmatrix'], 16)
+    print(f'Matrix: {matrixAddr:x}')
 
     print('Pls wait while we other stuff...')
     lightingAddr = FindFirstChildOfClass(dataModel, 'Lighting')
@@ -68,6 +71,8 @@ def init():
 
     radar.stdin.write(f'addrs{lpAddr},{camLVAddr},{plrsAddr}\n')
     radar.stdin.flush()
+    esp.stdin.write(f'addrs{lpAddr},{matrixAddr},{plrsAddr}\n')
+    esp.stdin.flush()
 
     print('Injected successfully\n-------------------------------')
 
@@ -142,13 +147,25 @@ def toogleRadar():
     radar.stdin.write('toogle1\n')
     radar.stdin.flush()
 
-def toogleIgnoreTeam():
+def toogleIgnoreTeamRadar():
     radar.stdin.write('toogle2\n')
     radar.stdin.flush()
 
-def toogleIgnoreDead():
+def toogleIgnoreDeadRadar():
     radar.stdin.write('toogle3\n')
     radar.stdin.flush()
+
+def toogleEsp():
+    esp.stdin.write('toogle1\n')
+    esp.stdin.flush()
+
+def toogleIgnoreTeamEsp():
+    esp.stdin.write('toogle2\n')
+    esp.stdin.flush()
+
+def toogleIgnoreDeadEsp():
+    esp.stdin.write('toogle3\n')
+    esp.stdin.flush()
 
 class MyApp(QMainWindow, Ui_MainWindow):
     def __init__(self):
@@ -156,21 +173,53 @@ class MyApp(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
 if hasattr(sys, '_MEIPASS'):
-    radarPath = path.join(sys._MEIPASS, 'radar.exe')
-else:
-    radarPath = 'radar.py'
+    radar = Popen([
+        path.join(sys._MEIPASS, 'radar.exe'),
+        str(int(offsets['ModelInstance'], 16)),
+        str(int(offsets['Primitive'], 16)),
+        str(int(offsets['Position'], 16)),
+        str(int(offsets['Team'], 16)),
+        str(int(offsets['TeamColor'], 16)),
+        str(int(offsets['Health'], 16)),
+        str(int(offsets['Name'], 16)),
+        str(int(offsets['Children'], 16))
+    ], stdin=PIPE, text=True)
 
-radar = Popen([
-    radarPath,
-    str(int(offsets['ModelInstance'], 16)),
-    str(int(offsets['Primitive'], 16)),
-    str(int(offsets['Position'], 16)),
-    str(int(offsets['Team'], 16)),
-    str(int(offsets['TeamColor'], 16)),
-    str(int(offsets['Health'], 16)),
-    str(int(offsets['Name'], 16)),
-    str(int(offsets['Children'], 16))
-], stdin=PIPE, text=True)
+    esp = Popen([
+        path.join(sys._MEIPASS, 'esp.exe'),
+        str(int(offsets['ModelInstance'], 16)),
+        str(int(offsets['Primitive'], 16)),
+        str(int(offsets['Position'], 16)),
+        str(int(offsets['Team'], 16)),
+        str(int(offsets['TeamColor'], 16)),
+        str(int(offsets['Health'], 16)),
+        str(int(offsets['Name'], 16)),
+        str(int(offsets['Children'], 16))
+    ], stdin=PIPE, text=True)
+else:
+    radar = Popen([
+        'python', 'radar.py',
+        str(int(offsets['ModelInstance'], 16)),
+        str(int(offsets['Primitive'], 16)),
+        str(int(offsets['Position'], 16)),
+        str(int(offsets['Team'], 16)),
+        str(int(offsets['TeamColor'], 16)),
+        str(int(offsets['Health'], 16)),
+        str(int(offsets['Name'], 16)),
+        str(int(offsets['Children'], 16))
+    ], stdin=PIPE, text=True)
+
+    esp = Popen([
+        'python', 'esp.py',
+        str(int(offsets['ModelInstance'], 16)),
+        str(int(offsets['Primitive'], 16)),
+        str(int(offsets['Position'], 16)),
+        str(int(offsets['Team'], 16)),
+        str(int(offsets['TeamColor'], 16)),
+        str(int(offsets['Health'], 16)),
+        str(int(offsets['Name'], 16)),
+        str(int(offsets['Children'], 16))
+    ], stdin=PIPE, text=True)
 
 app = QApplication([])
 window = MyApp()
@@ -182,8 +231,11 @@ window.FOV.valueChanged.connect(fovChange)
 window.Gravity.valueChanged.connect(gravChange)
 window.Reset.clicked.connect(resetChr)
 window.Radar.stateChanged.connect(toogleRadar)
-window.IgnoreTeam.stateChanged.connect(toogleIgnoreTeam)
-window.IgnoreDead.stateChanged.connect(toogleIgnoreDead)
+window.IgnoreTeamRadar.stateChanged.connect(toogleIgnoreTeamRadar)
+window.IgnoreDeadRadar.stateChanged.connect(toogleIgnoreDeadRadar)
+window.ESP.stateChanged.connect(toogleEsp)
+window.IgnoreTeamEsp.stateChanged.connect(toogleIgnoreTeamEsp)
+window.IgnoreDeadEsp.stateChanged.connect(toogleIgnoreDeadEsp)
 window.show()
 
 def loops():

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>425</width>
-    <height>215</height>
+    <height>280</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,19 +19,19 @@
   <property name="minimumSize">
    <size>
     <width>425</width>
-    <height>215</height>
+    <height>280</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>425</width>
-    <height>215</height>
+    <height>280</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
     <width>425</width>
-    <height>215</height>
+    <height>280</height>
    </size>
   </property>
   <property name="font">
@@ -542,8 +542,8 @@ color: rgb(245, 245, 245);</string>
    <widget class="QCheckBox" name="Radar">
     <property name="geometry">
      <rect>
-      <x>150</x>
-      <y>130</y>
+      <x>10</x>
+      <y>180</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -581,11 +581,11 @@ color: rgb(245, 245, 245);</string>
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QCheckBox" name="IgnoreTeam">
+   <widget class="QCheckBox" name="IgnoreTeamRadar">
     <property name="geometry">
      <rect>
-      <x>290</x>
-      <y>130</y>
+      <x>150</x>
+      <y>180</y>
       <width>130</width>
       <height>35</height>
      </rect>
@@ -624,11 +624,184 @@ team</string>
      <bool>false</bool>
     </property>
    </widget>
-   <widget class="QCheckBox" name="IgnoreDead">
+   <widget class="QCheckBox" name="IgnoreDeadRadar">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>180</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Radar will ignore your dead players if you enable this</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Ignore dead</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="Line" name="line">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>170</y>
+      <width>411</width>
+      <height>2</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>1</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(255, 255, 255);
+border-color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="Line" name="line_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>220</y>
+      <width>411</width>
+      <height>2</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>1</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(255, 255, 255);
+border-color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="ESP">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>230</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>18</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Adds radar to corner of your screen</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Esp</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="IgnoreTeamEsp">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>230</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Radar will ignore your team if you enable this</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>5</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Ignore your
+team</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="IgnoreDeadEsp">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>230</y>
       <width>130</width>
       <height>35</height>
      </rect>
