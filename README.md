@@ -23,8 +23,8 @@ This is shitty homemade external/exploit that <mark>you can run everywhere(with 
 4. From workspace it gets camera
 5. From camera it gets humanoid
 6. Now it has addresses for speed, jump power, FOV, etc for writing
-# Why ESP doesnt work properly?
-One of the known problem for me is scaled display. For proper ESP, <mark>set your display scaling at 100%</mark>
+# Why ESP/aimbot doesnt work properly?
+One of the known problem for me is scaled display. For proper ESP/aimbot, <mark>set your display scaling at 100%</mark>
 # Preview:
 ![Preview of this roblox external](preview.png)
 # Driver credits:
