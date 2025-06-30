@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>425</width>
-    <height>280</height>
+    <height>325</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,19 +19,19 @@
   <property name="minimumSize">
    <size>
     <width>425</width>
-    <height>280</height>
+    <height>325</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>425</width>
-    <height>280</height>
+    <height>325</height>
    </size>
   </property>
   <property name="baseSize">
    <size>
     <width>425</width>
-    <height>280</height>
+    <height>325</height>
    </size>
   </property>
   <property name="font">
@@ -49,7 +49,13 @@
    <double>0.900000000000000</double>
   </property>
   <property name="styleSheet">
-   <string notr="true">background-color: rgb(0, 0, 0);</string>
+   <string notr="true">background-color: rgb(0, 0, 0);
+
+QToolTip {
+    background-color: black;
+    color: whitesmoke;
+    border-radius: 0px;
+}</string>
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
@@ -68,6 +74,13 @@
    </property>
    <property name="mouseTracking">
     <bool>false</bool>
+   </property>
+   <property name="styleSheet">
+    <string notr="true">QToolTip {
+    background-color: black;
+    color: whitesmoke;
+    border-radius: 0px;
+}</string>
    </property>
    <widget class="QPushButton" name="INJECT">
     <property name="geometry">
@@ -99,7 +112,7 @@
      <string>Press it before using cheat and after joining game</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(170, 0, 0);
@@ -133,7 +146,7 @@ color: rgb(245, 245, 245);</string>
      <string>Changes your speed</string>
     </property>
     <property name="toolTipDuration">
-     <number>3</number>
+     <number>-1</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -187,7 +200,7 @@ color: rgb(245, 245, 245);</string>
      <string>How high you jump</string>
     </property>
     <property name="toolTipDuration">
-     <number>3</number>
+     <number>-1</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -241,7 +254,7 @@ color: rgb(245, 245, 245);</string>
      <string>Field of view</string>
     </property>
     <property name="toolTipDuration">
-     <number>3</number>
+     <number>-1</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -298,7 +311,7 @@ color: rgb(245, 245, 245);</string>
      <string>If game always resets your FOV, you can use it!</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -337,10 +350,10 @@ color: rgb(245, 245, 245);</string>
      <bool>true</bool>
     </property>
     <property name="toolTip">
-     <string>Roblox can crash!!!</string>
+     <string>Applies these changes after death</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245);</string>
@@ -390,7 +403,7 @@ apply</string>
      <string>Deletes fog</string>
     </property>
     <property name="toolTipDuration">
-     <number>2</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(0, 0, 127);
@@ -424,7 +437,7 @@ color: rgb(245, 245, 245);</string>
      <string>Gravity</string>
     </property>
     <property name="toolTipDuration">
-     <number>3</number>
+     <number>-1</number>
     </property>
     <property name="autoFillBackground">
      <bool>false</bool>
@@ -487,7 +500,7 @@ color: rgb(245, 245, 245);</string>
      <string>Resets character</string>
     </property>
     <property name="toolTipDuration">
-     <number>3</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">background-color: rgb(0, 85, 0);
@@ -521,7 +534,7 @@ color: rgb(245, 245, 245);</string>
      <string>Makes you able go through walls</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -563,7 +576,7 @@ color: rgb(245, 245, 245);</string>
      <string>Adds radar to corner of your screen</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -605,7 +618,7 @@ color: rgb(245, 245, 245);</string>
      <string>Radar will ignore your team if you enable this</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -648,7 +661,7 @@ team</string>
      <string>Radar will ignore your dead players if you enable this</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -733,10 +746,10 @@ border-color: rgb(255, 255, 255);</string>
      <bool>true</bool>
     </property>
     <property name="toolTip">
-     <string>Adds radar to corner of your screen</string>
+     <string>Makes you able to see players through walls</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -775,10 +788,10 @@ border-color: rgb(255, 255, 255);</string>
      <bool>true</bool>
     </property>
     <property name="toolTip">
-     <string>Radar will ignore your team if you enable this</string>
+     <string>ESP will ignore your team if you enable this</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>
@@ -818,10 +831,160 @@ team</string>
      <bool>true</bool>
     </property>
     <property name="toolTip">
-     <string>Radar will ignore your dead players if you enable this</string>
+     <string>ESP will ignore your dead players if you enable this</string>
     </property>
     <property name="toolTipDuration">
-     <number>5</number>
+     <number>-1</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Ignore dead</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="Line" name="line_3">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>270</y>
+      <width>411</width>
+      <height>2</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>1</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(255, 255, 255);
+background-color: rgb(255, 255, 255);
+border-color: rgb(255, 255, 255);</string>
+    </property>
+    <property name="orientation">
+     <enum>Qt::Horizontal</enum>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="Aimbot">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>280</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>18</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Automatically rotates your camera to player you choose</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>-1</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Aimbot</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="IgnoreTeamAimbot">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>280</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Aimbot will ignore your team if you enable this</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>-1</number>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">color: rgb(245, 245, 245)</string>
+    </property>
+    <property name="text">
+     <string>Ignore your
+team</string>
+    </property>
+    <property name="iconSize">
+     <size>
+      <width>20</width>
+      <height>20</height>
+     </size>
+    </property>
+    <property name="checked">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QCheckBox" name="IgnoreDeadAimbot">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>280</y>
+      <width>130</width>
+      <height>35</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>Consolas</family>
+      <pointsize>10</pointsize>
+      <weight>75</weight>
+      <bold>true</bold>
+     </font>
+    </property>
+    <property name="mouseTracking">
+     <bool>true</bool>
+    </property>
+    <property name="toolTip">
+     <string>Aimbot will ignore your dead players if you enable this</string>
+    </property>
+    <property name="toolTipDuration">
+     <number>-1</number>
     </property>
     <property name="styleSheet">
      <string notr="true">color: rgb(245, 245, 245)</string>

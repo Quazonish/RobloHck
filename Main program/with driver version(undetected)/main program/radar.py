@@ -262,7 +262,7 @@ def draw_radar():
         if v == lpAddr:
             continue
         team = read_int8(v + teamOffset)
-        if not ignoreTeam or (team != lpTeam and team > 0):
+        if not ignoreTeam or team != lpTeam:
             char = read_int8(v + modelInstanceOffset)
 
             if ignoreDead:
