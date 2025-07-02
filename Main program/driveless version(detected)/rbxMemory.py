@@ -90,14 +90,43 @@ def GetChildren(instance: int) -> list:
     return children
 
 def FindFirstChild(instance: int, child_name: str) -> int:
-    for child in GetChildren(instance):
-        if GetName(child) == child_name:
-            return child
+    if not instance:
+        return 0
+
+    start = DRP(instance + childrenOffset)
+    if start == 0:
+        return 0
+    end = DRP(start + 8)
+    current = DRP(start)
+    for _ in range(9000):
+        if current == end:
+            break
+        child = pm.read_longlong(current)
+        try:
+            if GetName(child) == child_name:
+                return child
+        except:
+            pass
+        current += 0x10
+    return 0
 
 def FindFirstChildOfClass(instance: int, class_name: str) -> int:
-    for child in GetChildren(instance):
+    if not instance:
+        return 0
+
+    start = DRP(instance + childrenOffset)
+    if start == 0:
+        return 0
+    end = DRP(start + 8)
+    current = DRP(start)
+    for _ in range(9000):
+        if current == end:
+            break
+        child = pm.read_longlong(current)
         try:
             if GetClassName(child) == class_name:
                 return child
         except:
             pass
+        current += 0x10
+    return 0

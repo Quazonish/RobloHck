@@ -1,19 +1,20 @@
 print('ESP starting...')
-from PyQt5.QtWidgets import QApplication, QWidget
-from PyQt5.QtGui import QPainter, QColor, QFont, QPen
+from PyQt5.QtWidgets import QApplication, QOpenGLWidget
 from PyQt5.QtCore import Qt, QTimer
-from numpy import array, dot, float32, reshape, matmul, transpose
-from ctypes import windll, byref, Structure, c_ulong, wintypes
+from PyQt5.QtGui import QColor
+from OpenGL.GL import *
+from numpy import array, float32, empty, einsum
+from ctypes import windll, byref, Structure, wintypes
 from rbxMemory import *
 from sys import argv, stdin
 from threading import Thread
+from time import time
+from struct import unpack_from
+import ctypes
 
 GWL_EXSTYLE = -20
 WS_EX_LAYERED = 0x80000
 WS_EX_TRANSPARENT = 0x20
-WS_EX_TOPMOST = 0x8
-LWA_COLORKEY = 0x1
-pen = QPen()
 
 class RECT(Structure):
     _fields_ = [('left', wintypes.LONG), ('top', wintypes.LONG), ('right', wintypes.LONG), ('bottom', wintypes.LONG)]
@@ -34,82 +35,89 @@ def get_client_rect_on_screen(hwnd):
     windll.user32.ClientToScreen(hwnd, byref(bottom_right))
     return top_left.x, top_left.y, bottom_right.x, bottom_right.y
 
-class ESPOverlay(QWidget):
+class ESPOverlay(QOpenGLWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ESP Overlay")
-        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTransparentForInput)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setAttribute(Qt.WA_NoSystemBackground)
         self.resize(1920, 1080)
+        self.humOffsetCached = 0
+        self.headOffsetCached = 0
+        self.time = 0
+
         self.plr_data = []
         self.last_matrix = None
         self.prev_geometry = (0, 0, 0, 0)
 
-        self.font_bold = QFont("Arial", 10, QFont.Bold)
-        self.font_normal = QFont("Arial", 10)
+        self.startLineX = 0
+        self.startLineY = 0
 
-    def paintEvent(self, event):
+        hwnd = self.winId().__int__()
+        ex_style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+        ex_style |= WS_EX_LAYERED | WS_EX_TRANSPARENT
+        ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, ex_style)
+
+    def initializeGL(self):
+        glClearColor(0.0, 0.0, 0.0, 0.0)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glLineWidth(3.0)
+        glEnable(GL_LINE_SMOOTH)
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+
+    def resizeGL(self, w, h):
+        glViewport(0, 0, w, h)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, w, h, 0, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+
+    def paintGL(self):
         if hidden:
             return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        pen.setWidth(2)
+        
+        glClear(GL_COLOR_BUFFER_BIT)
+        glLoadIdentity()
 
-        for x, y, name, health, tool, color in self.plr_data:
-            outline_pen = QPen(QColor('black'), 4)
-            painter.setPen(outline_pen)
-            painter.drawLine(self.width() // 2, self.height() - int(self.height()/20), x, y)
+        for x, y, color in self.plr_data:
+            r, g, b = QColor(color).redF(), QColor(color).greenF(), QColor(color).blueF()
 
-            pen.setColor(QColor(color))
-            pen.setWidth(2)
-            painter.setPen(pen)
-            painter.drawLine(self.width() // 2, self.height() - int(self.height()/20), x, y)
+            glColor3f(r, g, b)
+            glBegin(GL_LINES)
+            glVertex2f(self.startLineX, self.startLineY)
+            glVertex2f(x, y)
 
-            lines = [name, f"Health: {health}", tool]
-            y_offset = -20
-            line_height = 12
-            outline_color = QColor("black")
-            text_color = QColor(color)
-            offsets = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-            painter.setFont(self.font_bold)
-            for dx, dy in offsets:
-                painter.setPen(outline_color)
-                painter.drawText(x + 5 + dx, y + y_offset + dy, lines[0])
-            painter.setPen(text_color)
-            painter.drawText(x + 5, y + y_offset, lines[0])
-
-            painter.setFont(self.font_normal)
-            for i, line in enumerate(lines[1:], start=1):
-                y_line = y + y_offset + i * line_height
-                for dx, dy in offsets:
-                    painter.setPen(outline_color)
-                    painter.drawText(x + 5 + dx, y_line + dy, line)
-                painter.setPen(text_color)
-                painter.drawText(x + 5, y_line, line)
+            glEnd()
 
     def update_players(self):
         if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
             return
-        self.plr_data.clear()
+
         if hidden:
             return
 
-        hwnd_roblox = find_window_by_title("Roblox")
-        if hwnd_roblox:
-            x, y, r, b = get_client_rect_on_screen(hwnd_roblox)
-            new_geom = (x, y, r - x, b - y)
-            if new_geom != self.prev_geometry:
-                self.setGeometry(*new_geom)
-                self.prev_geometry = new_geom
+        vecs_np = empty((50, 4), dtype=float32)
+        players_info = [0] * 50
+        count = 0
+
+        self.plr_data.clear()
+        if time() - self.time > 1:
+            hwnd_roblox = find_window_by_title("Roblox")
+            if hwnd_roblox:
+                x, y, r, b = get_client_rect_on_screen(hwnd_roblox)
+                new_geom = (x, y, r - x, b - y)
+                if new_geom != self.prev_geometry:
+                    self.setGeometry(*new_geom)
+                    self.prev_geometry = new_geom
+                    self.startLineX = self.width() / 2
+                    self.startLineY = self.height() - self.height() / 20
+            self.time = time()
 
         lpTeam = read_int8(lpAddr + teamOffset)
-
-        matrix_flat = [read_float(matrixAddr + i * 4) for i in range(16)]
-        view_proj_matrix = reshape(array(matrix_flat, dtype=float32), (4, 4))
-
-        vecs = []
-        players_info = []
+        matrixRaw = read(matrixAddr, 64)
+        
+        view_proj_matrix = array(unpack_from("<16f", matrixRaw, 0), dtype=float32).reshape(4, 4)
 
         for v in GetChildren(plrsAddr):
             if v == lpAddr:
@@ -117,28 +125,57 @@ class ESPOverlay(QWidget):
             team = read_int8(v + teamOffset)
             if not ignoreTeam or (team != lpTeam and team > 0):
                 char = read_int8(v + modelInstanceOffset)
-                head = FindFirstChild(char, "Head")
-                hum = FindFirstChildOfClass(char, "Humanoid")
+                if not char:
+                    return
+                ChildrenStart = DRP(char + childrenOffset, True)
+                if ChildrenStart == 0:
+                    return
+                head, hum = 0, 0
+                ChildrenEnd = DRP(ChildrenStart + 8, True)
+                OffsetAddressPerChild = 0x10
+                CurrentChildAddress = DRP(ChildrenStart, True)
+                hum = read_int8(CurrentChildAddress + self.humOffsetCached)
+                head = read_int8(CurrentChildAddress + self.headOffsetCached)
+                try:
+                    if GetClassName(hum) != 'Humanoid':
+                        hum = 0
+                        self.humOffsetCached = 0
+                    if GetName(head) != 'Head':
+                        head = 0
+                        self.headOffsetCached = 0
+                except OSError:
+                    pass
+                for i in range(0, 256):
+                    try:
+                        if CurrentChildAddress == ChildrenEnd:
+                            break
+                        child = read_int8(CurrentChildAddress)
+                        if not(head > 0) and GetName(child) == 'Head':
+                            head = child
+                            self.headOffsetCached = i*OffsetAddressPerChild
+                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
+                            hum = child
+                            self.humOffsetCached = i*OffsetAddressPerChild
+                        elif head > 0 and hum > 0:
+                            break
+                        CurrentChildAddress += OffsetAddressPerChild
+                    except OSError:
+                        pass
                 if head and hum:
-                    health = read_float(hum + healthOffset)
-                    if ignoreDead and health <= 0:
-                        continue
-                    primitive = read_int8(head + primitiveOffset)
+                    try:
+                        if ignoreDead and read_float(hum + healthOffset) <= 0:
+                            continue
+                        vecs_np[count, :3] = unpack_from("<fff", read(read_int8(head + primitiveOffset) + positionOffset, 12), 0)
+                        vecs_np[count, 3] = 1.0
+                        players_info[count] = team
+                        count += 1
+                    except OSError:
+                        pass
 
-                    pos = array([
-                        read_float(primitive + positionOffset),
-                        read_float(primitive + positionOffset + 4),
-                        read_float(primitive + positionOffset + 8)
-                    ], dtype=float32)
-                    vec = array([*pos, 1.0], dtype=float32)
-                    vecs.append(vec)
-                    players_info.append((v, team, health, char))
-
-        if not vecs:
-            self.update()
+        if count == 0:
             return
 
-        clip_coords = matmul(view_proj_matrix, transpose(array(vecs))).T
+        clip_coords = einsum('ij,nj->ni', view_proj_matrix, vecs_np[:count])
 
         for idx, clip in enumerate(clip_coords):
             if clip[3] != 0:
@@ -147,18 +184,14 @@ class ESPOverlay(QWidget):
                     x = int((ndc[0] + 1) * 0.5 * self.width())
                     y = int((1 - ndc[1]) * 0.5 * self.height())
 
-                    v, team, health, char = players_info[idx]
-                    name = GetName(v)
-                    tool = FindFirstChildOfClass(char, 'Tool')
-                    toolName = "Tool: " + GetName(tool) if tool else ""
+                    team = players_info[idx]
                     color = 'white'
                     if team > 0:
                         color = rbxColors.get(read_int4(team + teamColorOffset), 'white')
 
-                    self.plr_data.append((x, y, name, health, toolName, color))
+                    self.plr_data.append((x, y, color))
 
-        self.update()
-
+        self.repaint()
 hidden = True
 def signalHandler():
     global lpAddr, matrixAddr, plrsAddr, ignoreTeam, ignoreDead, hidden
@@ -405,6 +438,7 @@ if __name__ == "__main__":
     teamColorOffset = int(args[4])
     healthOffset = int(args[5])
     setOffsets(int(args[6]), int(args[7]))
+    childrenOffset = int(args[7])
     open_device()
 
     Thread(target=signalHandler, daemon=True).start()
@@ -415,7 +449,7 @@ if __name__ == "__main__":
 
     timer = QTimer()
     timer.timeout.connect(esp.update_players)
-    timer.start(8)
+    timer.start(16)
 
     print('ESP started')
     app.exec_()

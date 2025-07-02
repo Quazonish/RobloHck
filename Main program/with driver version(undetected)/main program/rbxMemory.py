@@ -283,26 +283,48 @@ def GetChildren(Instance: int) -> list:
     return ChildrenInstance
 
 def FindFirstChild(Instance: int, ChildName: str) -> int:
-    ChildrenOfInstance = GetChildren(Instance)
-    if not isinstance(ChildrenOfInstance, list):
-        return None
-    for i in ChildrenOfInstance:
+    InstanceAddress = Instance
+    if not InstanceAddress:
+        return 0
+    ChildrenStart = DRP(InstanceAddress + childrenOffset, True)
+    if ChildrenStart == 0:
+        return 0
+    ChildrenEnd = DRP(ChildrenStart + 8, True)
+    OffsetAddressPerChild = 0x10
+    CurrentChildAddress = DRP(ChildrenStart, True)
+    for i in range(0, 9000):
+        if CurrentChildAddress == ChildrenEnd:
+            break
+        child = read_int8(CurrentChildAddress)
         try:
-            if GetName(i) == ChildName:
-                return i
-        except:
+            if GetName(child) == ChildName:
+                return child
+        except OSError:
             pass
+        CurrentChildAddress += OffsetAddressPerChild
+    return 0
 
 def FindFirstChildOfClass(Instance: int, ClassName: str) -> int:
-    ChildrenOfInstance = GetChildren(Instance)
-    if not isinstance(ChildrenOfInstance, list):
-        return None
-    for i in ChildrenOfInstance:
+    InstanceAddress = Instance
+    if not InstanceAddress:
+        return 0
+    ChildrenStart = DRP(InstanceAddress + childrenOffset, True)
+    if ChildrenStart == 0:
+        return 0
+    ChildrenEnd = DRP(ChildrenStart + 8, True)
+    OffsetAddressPerChild = 0x10
+    CurrentChildAddress = DRP(ChildrenStart, True)
+    for i in range(0, 9000):
+        if CurrentChildAddress == ChildrenEnd:
+            break
+        child = read_int8(CurrentChildAddress)
         try:
-            if GetClassName(i) == ClassName:
-                return i
-        except:
+            if GetClassName(child) == ClassName:
+                return child
+        except OSError:
             pass
+        CurrentChildAddress += OffsetAddressPerChild
+    return 0
 
 def setOffsets(nameOffset2: int, childrenOffset2: int):
     global nameOffset, childrenOffset

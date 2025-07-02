@@ -4,3 +4,5 @@ keyboard
 requests
 PyQt5
 auto-py-to-exe
+PyOpenGL
+PyOpenGL_accelerate

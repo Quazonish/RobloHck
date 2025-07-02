@@ -236,7 +236,7 @@ def draw_radar():
 
     char = pm.read_longlong(lpAddr + modelInstanceOffset)
     hrp = FindFirstChild(char, 'HumanoidRootPart')
-    if hrp is not None:
+    if hrp is not None and hrp > 0:
         primitive = pm.read_longlong(hrp + primitiveOffset)
         lpX = pm.read_float(primitive + positionOffset)
         lpY = pm.read_float(primitive + positionOffset + 8)
@@ -268,11 +268,11 @@ def draw_radar():
 
             if ignoreDead:
                 hum = FindFirstChildOfClass(char, 'Humanoid')
-                if hum is None or pm.read_float(hum + healthOffset) <= 0:
+                if hum is None or hum == 0 or pm.read_float(hum + healthOffset) <= 0:
                     continue
 
             hrp = FindFirstChild(char, 'HumanoidRootPart')
-            if hrp is None:
+            if hrp is None or hrp == 0:
                 continue
 
             primitive = pm.read_longlong(hrp + primitiveOffset)

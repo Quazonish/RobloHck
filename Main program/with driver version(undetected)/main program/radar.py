@@ -234,11 +234,14 @@ def draw_radar():
     canvas.create_rectangle(0, 0, WINDOW_SIZE, WINDOW_SIZE, fill="black", outline="")
 
     char = read_int8(lpAddr + modelInstanceOffset)
-    hrp = FindFirstChild(char, 'HumanoidRootPart')
-    if hrp is not None:
-        primitive = read_int8(hrp + primitiveOffset)
-        lpX = read_float(primitive + positionOffset)
-        lpY = read_float(primitive + positionOffset + 8)
+    try:
+        hrp = FindFirstChild(char, 'HumanoidRootPart')
+        if hrp is not None and hrp > 0:
+            primitive = read_int8(hrp + primitiveOffset)
+            lpX = read_float(primitive + positionOffset)
+            lpY = read_float(primitive + positionOffset + 8)
+    except OSError:
+        pass
 
     color = 'red'
     lpTeam = read_int8(lpAddr + teamOffset)
@@ -259,41 +262,44 @@ def draw_radar():
     sin_a = sin(camRot)
 
     for v in GetChildren(plrsAddr):
-        if v == lpAddr:
-            continue
-        team = read_int8(v + teamOffset)
-        if not ignoreTeam or team != lpTeam:
-            char = read_int8(v + modelInstanceOffset)
+        try:
+            if v == lpAddr:
+                continue
+            team = read_int8(v + teamOffset)
+            if not ignoreTeam or team != lpTeam:
+                char = read_int8(v + modelInstanceOffset)
 
-            if ignoreDead:
-                hum = FindFirstChildOfClass(char, 'Humanoid')
-                if hum is None or read_float(hum + healthOffset) <= 0:
+                if ignoreDead:
+                    hum = FindFirstChildOfClass(char, 'Humanoid')
+                    if hum == 0 or hum is None or read_float(hum + healthOffset) <= 0:
+                        continue
+
+                hrp = FindFirstChild(char, 'HumanoidRootPart')
+                if hrp == 0 or hrp is None:
                     continue
 
-            hrp = FindFirstChild(char, 'HumanoidRootPart')
-            if hrp is None:
-                continue
+                primitive = read_int8(hrp + primitiveOffset)
+                x = read_float(primitive + positionOffset) - lpX
+                y = read_float(primitive + positionOffset + 8) - lpY
 
-            primitive = read_int8(hrp + primitiveOffset)
-            x = read_float(primitive + positionOffset) - lpX
-            y = read_float(primitive + positionOffset + 8) - lpY
+                dx = x / scale
+                dy = y / scale
+                x = dx * cos_a - dy * sin_a
+                y = dx * sin_a + dy * cos_a
 
-            dx = x / scale
-            dy = y / scale
-            x = dx * cos_a - dy * sin_a
-            y = dx * sin_a + dy * cos_a
+                if -WINDOW_SIZE <= x <= WINDOW_SIZE and -WINDOW_SIZE <= y <= WINDOW_SIZE:
+                    x = windowCenter + x
+                    y = windowCenter + y
+                    color = 'blue'
+                    if team > 0:
+                        color = rbxColors[read_int4(team + teamColorOffset)]
 
-            if -WINDOW_SIZE <= x <= WINDOW_SIZE and -WINDOW_SIZE <= y <= WINDOW_SIZE:
-                x = windowCenter + x
-                y = windowCenter + y
-                color = 'blue'
-                if team > 0:
-                    color = rbxColors[read_int4(team + teamColorOffset)]
-
-                canvas.create_oval(
-                    x - 2, y - 2, x + 2, y + 2,
-                    fill=color, outline=""
-                )
+                    canvas.create_oval(
+                        x - 2, y - 2, x + 2, y + 2,
+                        fill=color, outline=""
+                    )
+        except OSError:
+            pass
 
 hidden = True
 ignoreDead = False
