@@ -53,6 +53,8 @@ class ESPOverlay(QOpenGLWidget):
         self.startLineX = 0
         self.startLineY = 0
 
+        self.color = 'white'
+
         hwnd = self.winId().__int__()
         ex_style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
         ex_style |= WS_EX_LAYERED | WS_EX_TRANSPARENT
@@ -92,13 +94,18 @@ class ESPOverlay(QOpenGLWidget):
 
     def update_players(self):
         if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
+            sleep(1)
             return
 
         if hidden:
+            sleep(1)
+            return
+
+        if self.signalsBlocked():
+            sleep(0.1)
             return
 
         vecs_np = empty((50, 4), dtype=float32)
-        players_info = [0] * 50
         count = 0
 
         self.plr_data.clear()
@@ -114,68 +121,20 @@ class ESPOverlay(QOpenGLWidget):
                     self.startLineY = self.height() - self.height() / 20
             self.time = time()
 
-        lpTeam = pm.read_longlong(lpAddr + teamOffset)
         matrixRaw = pm.read_bytes(matrixAddr, 64)
         
         view_proj_matrix = array(unpack_from("<16f", matrixRaw, 0), dtype=float32).reshape(4, 4)
 
-        for v in GetChildren(plrsAddr):
-            if v == lpAddr:
-                continue
-            team = pm.read_longlong(v + teamOffset)
-            if not ignoreTeam or (team != lpTeam and team > 0):
-                char = pm.read_longlong(v + modelInstanceOffset)
-                if not char:
-                    return
-                ChildrenStart = DRP(char + childrenOffset)
-                if ChildrenStart == 0:
-                    return
-                head, hum = 0, 0
-                ChildrenEnd = DRP(ChildrenStart + 8)
-                OffsetAddressPerChild = 0x10
-                CurrentChildAddress = DRP(ChildrenStart)
-                hum = pm.read_longlong(CurrentChildAddress + self.humOffsetCached)
-                head = pm.read_longlong(CurrentChildAddress + self.headOffsetCached)
+        for head in heads:
+            while True:
                 try:
-                    if GetClassName(hum) != 'Humanoid':
-                        hum = 0
-                        self.humOffsetCached = 0
-                except:
-                    hum = 0
-                    self.humOffsetCached = 0
-                try:
-                    if GetName(head) != 'Head':
-                        head = 0
-                        self.headOffsetCached = 0
-                except:
-                    head = 0
-                    self.headOffsetCached = 0
-                for i in range(0, 256):
-                    try:
-                        if CurrentChildAddress == ChildrenEnd:
-                            break
-                        child = pm.read_longlong(CurrentChildAddress)
-                        if not(head > 0) and GetName(child) == 'Head':
-                            head = child
-                            self.headOffsetCached = i*OffsetAddressPerChild
-                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
-                            hum = child
-                            self.humOffsetCached = i*OffsetAddressPerChild
-                        elif head > 0 and hum > 0:
-                            break
-                        CurrentChildAddress += OffsetAddressPerChild
-                    except:
-                        pass
-                if head and hum:
-                    try:
-                        if ignoreDead and pm.read_float(hum + healthOffset) <= 0:
-                            continue
+                    if GetName(head) == 'Head':
                         vecs_np[count, :3] = unpack_from("<fff", pm.read_bytes(pm.read_longlong(head + primitiveOffset) + positionOffset, 12), 0)
                         vecs_np[count, 3] = 1.0
-                        players_info[count] = team
                         count += 1
-                    except:
-                        pass
+                    break
+                except:
+                    print(f'Retrying for {head:x}...')
 
         if count == 0:
             return
@@ -189,14 +148,13 @@ class ESPOverlay(QOpenGLWidget):
                     x = int((ndc[0] + 1) * 0.5 * self.width())
                     y = int((1 - ndc[1]) * 0.5 * self.height())
 
-                    team = players_info[idx]
-                    color = 'white'
-                    if team > 0:
-                        color = rbxColors.get(pm.read_int(team + teamColorOffset), 'white')
+                    try:
+                        self.color = colors[idx]
+                    except IndexError:
+                        pass
+                    self.plr_data.append((x, y, self.color))
 
-                    self.plr_data.append((x, y, color))
-
-        self.repaint()
+        self.update()
 hidden = True
 def signalHandler():
     global lpAddr, matrixAddr, plrsAddr, ignoreTeam, ignoreDead, hidden
@@ -214,6 +172,68 @@ def signalHandler():
                 ignoreTeam = not ignoreTeam
             elif line == 'toogle3':
                 ignoreDead = not ignoreDead
+
+heads = []
+colors = []
+def headAndHumFinder():
+    global heads, colors
+    while True:
+        if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
+            sleep(1)
+            continue
+
+        if hidden:
+            sleep(1)
+            continue
+
+        tempColors = []
+        tempHeads = []
+
+        lpTeam = pm.read_longlong(lpAddr + teamOffset)
+        for v in GetChildren(plrsAddr):
+            if v == lpAddr:
+                continue
+            team = pm.read_longlong(v + teamOffset)
+            if not ignoreTeam or (team != lpTeam and team > 0):
+                char = pm.read_longlong(v + modelInstanceOffset)
+                if not char:
+                    continue
+                ChildrenStart = DRP(char + childrenOffset)
+                if ChildrenStart == 0:
+                    continue
+                head, hum = 0, 0
+                ChildrenEnd = DRP(ChildrenStart + 8)
+                OffsetAddressPerChild = 0x10
+                CurrentChildAddress = DRP(ChildrenStart)
+                for _ in range(0, 256):
+                    try:
+                        if CurrentChildAddress == ChildrenEnd:
+                            break
+                        child = pm.read_longlong(CurrentChildAddress)
+                        if not(head > 0) and GetName(child) == 'Head':
+                            head = child
+                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
+                            hum = child
+                        elif head > 0 and hum > 0:
+                            break
+                        CurrentChildAddress += OffsetAddressPerChild
+                    except:
+                        pass
+                if head and hum:
+                    try:
+                        if ignoreDead and pm.read_float(hum + healthOffset) <= 0:
+                            continue
+                        team = pm.read_longlong(v + teamOffset)
+                        color = 'white'
+                        if team > 0:
+                            color = rbxColors[pm.read_int(team + teamColorOffset)]
+                        tempColors.append(color)
+                        tempHeads.append(head)
+                    except:
+                        pass
+        heads = tempHeads
+        colors = tempColors
+        sleep(0.1)
 
 if __name__ == "__main__":
     rbxColors = {
@@ -455,6 +475,7 @@ if __name__ == "__main__":
             sleep(0.1)
 
     Thread(target=background_process_monitor, daemon=True).start()
+    Thread(target=headAndHumFinder, daemon=True).start()
 
     app = QApplication([])
     esp = ESPOverlay()
@@ -462,7 +483,7 @@ if __name__ == "__main__":
 
     timer = QTimer()
     timer.timeout.connect(esp.update_players)
-    timer.start(16)
+    timer.start(8)
 
     print('ESP started')
     app.exec_()

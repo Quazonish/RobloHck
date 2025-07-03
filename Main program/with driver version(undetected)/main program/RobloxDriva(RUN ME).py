@@ -56,12 +56,12 @@ camAddr = 0
 def init():
     global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr
     pid = get_pid_by_name("RobloxPlayerBeta.exe")
-    openProcess(pid)
+    setPid(pid)
     radar.stdin.write(f'desc{pid}\n')
     radar.stdin.flush()
     esp.stdin.write(f'desc{pid}\n')
     esp.stdin.flush()
-    baseAddr = get_module_base(pid)
+    baseAddr = find_image_base() #get_module_base(pid)
     
     fakeDatamodel = read_int8(baseAddr + int(offsets['FakeDataModelPointer'], 16))
     print(f'Fake datamodel: {fakeDatamodel:x}')
@@ -373,6 +373,6 @@ def loops():
                 else:
                     target = 0
         #sleep(1)
-
+open_device()
 Thread(target=loops, daemon=True).start()
 sys.exit(app.exec_())

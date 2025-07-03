@@ -8,7 +8,7 @@ from ctypes import windll, byref, Structure, wintypes
 from rbxMemory import *
 from sys import argv, stdin
 from threading import Thread
-from time import time
+from time import time, sleep
 from struct import unpack_from
 import ctypes
 
@@ -49,10 +49,7 @@ class ESPOverlay(QOpenGLWidget):
         self.plr_data = []
         self.last_matrix = None
         self.prev_geometry = (0, 0, 0, 0)
-
-        self.startLineX = 0
-        self.startLineY = 0
-
+        self.color = 'white'
         hwnd = self.winId().__int__()
         ex_style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
         ex_style |= WS_EX_LAYERED | WS_EX_TRANSPARENT
@@ -91,17 +88,23 @@ class ESPOverlay(QOpenGLWidget):
             glEnd()
 
     def update_players(self):
+        self.plr_data.clear()
+
         if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
+            sleep(1)
             return
 
         if hidden:
+            sleep(1)
+            return
+
+        if self.signalsBlocked():
+            sleep(0.1)
             return
 
         vecs_np = empty((50, 4), dtype=float32)
-        players_info = [0] * 50
         count = 0
 
-        self.plr_data.clear()
         if time() - self.time > 1:
             hwnd_roblox = find_window_by_title("Roblox")
             if hwnd_roblox:
@@ -114,84 +117,38 @@ class ESPOverlay(QOpenGLWidget):
                     self.startLineY = self.height() - self.height() / 20
             self.time = time()
 
-        lpTeam = read_int8(lpAddr + teamOffset)
         matrixRaw = read(matrixAddr, 64)
         
         view_proj_matrix = array(unpack_from("<16f", matrixRaw, 0), dtype=float32).reshape(4, 4)
 
-        for v in GetChildren(plrsAddr):
-            if v == lpAddr:
-                continue
-            team = read_int8(v + teamOffset)
-            if not ignoreTeam or (team != lpTeam and team > 0):
-                char = read_int8(v + modelInstanceOffset)
-                if not char:
-                    return
-                ChildrenStart = DRP(char + childrenOffset, True)
-                if ChildrenStart == 0:
-                    return
-                head, hum = 0, 0
-                ChildrenEnd = DRP(ChildrenStart + 8, True)
-                OffsetAddressPerChild = 0x10
-                CurrentChildAddress = DRP(ChildrenStart, True)
-                hum = read_int8(CurrentChildAddress + self.humOffsetCached)
-                head = read_int8(CurrentChildAddress + self.headOffsetCached)
+        for head in heads:
+            while True:
                 try:
-                    if GetClassName(hum) != 'Humanoid':
-                        hum = 0
-                        self.humOffsetCached = 0
-                    if GetName(head) != 'Head':
-                        head = 0
-                        self.headOffsetCached = 0
-                except OSError:
-                    pass
-                for i in range(0, 256):
-                    try:
-                        if CurrentChildAddress == ChildrenEnd:
-                            break
-                        child = read_int8(CurrentChildAddress)
-                        if not(head > 0) and GetName(child) == 'Head':
-                            head = child
-                            self.headOffsetCached = i*OffsetAddressPerChild
-                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
-                            hum = child
-                            self.humOffsetCached = i*OffsetAddressPerChild
-                        elif head > 0 and hum > 0:
-                            break
-                        CurrentChildAddress += OffsetAddressPerChild
-                    except OSError:
-                        pass
-                if head and hum:
-                    try:
-                        if ignoreDead and read_float(hum + healthOffset) <= 0:
-                            continue
+                    if GetName(head) == 'Head':
                         vecs_np[count, :3] = unpack_from("<fff", read(read_int8(head + primitiveOffset) + positionOffset, 12), 0)
                         vecs_np[count, 3] = 1.0
-                        players_info[count] = team
                         count += 1
-                    except OSError:
-                        pass
+                    break
+                except OSError:
+                    print(f'Retrying for {head:x}...')
 
         if count == 0:
             return
 
         clip_coords = einsum('ij,nj->ni', view_proj_matrix, vecs_np[:count])
-
         for idx, clip in enumerate(clip_coords):
             if clip[3] != 0:
                 ndc = clip[:3] / clip[3]
                 if 0 <= ndc[2] <= 1:
                     x = int((ndc[0] + 1) * 0.5 * self.width())
                     y = int((1 - ndc[1]) * 0.5 * self.height())
+                    try:
+                        self.color = colors[idx]
+                    except IndexError:
+                        pass
+                    self.plr_data.append((x, y, self.color))
 
-                    team = players_info[idx]
-                    color = 'white'
-                    if team > 0:
-                        color = rbxColors.get(read_int4(team + teamColorOffset), 'white')
-
-                    self.plr_data.append((x, y, color))
-
-        self.repaint()
+        self.update()
 hidden = True
 def signalHandler():
     global lpAddr, matrixAddr, plrsAddr, ignoreTeam, ignoreDead, hidden
@@ -212,6 +169,67 @@ def signalHandler():
             elif line == 'toogle3':
                 ignoreDead = not ignoreDead
 
+heads = []
+colors = []
+def headAndHumFinder():
+    global heads, colors
+    while True:
+        if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
+            sleep(1)
+            continue
+
+        if hidden:
+            sleep(1)
+            continue
+
+        tempColors = []
+        tempHeads = []
+
+        lpTeam = read_int8(lpAddr + teamOffset)
+        for v in GetChildren(plrsAddr):
+            if v == lpAddr:
+                continue
+            team = read_int8(v + teamOffset)
+            if not ignoreTeam or (team != lpTeam and team > 0):
+                char = read_int8(v + modelInstanceOffset)
+                if not char:
+                    continue
+                ChildrenStart = DRP(char + childrenOffset, True)
+                if ChildrenStart == 0:
+                    continue
+                head, hum = 0, 0
+                ChildrenEnd = DRP(ChildrenStart + 8, True)
+                OffsetAddressPerChild = 0x10
+                CurrentChildAddress = DRP(ChildrenStart, True)
+                for _ in range(0, 256):
+                    try:
+                        if CurrentChildAddress == ChildrenEnd:
+                            break
+                        child = read_int8(CurrentChildAddress)
+                        if not(head > 0) and GetName(child) == 'Head':
+                            head = child
+                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
+                            hum = child
+                        elif head > 0 and hum > 0:
+                            break
+                        CurrentChildAddress += OffsetAddressPerChild
+                    except OSError:
+                        pass
+                if head and hum:
+                    try:
+                        if ignoreDead and read_float(hum + healthOffset) <= 0:
+                            continue
+                        team = read_int8(v + teamOffset)
+                        color = 'white'
+                        if team > 0:
+                            color = rbxColors[read_int4(team + teamColorOffset)]
+                        tempColors.append(color)
+                        tempHeads.append(head)
+                    except OSError:
+                        pass
+        heads = tempHeads
+        colors = tempColors
+        sleep(0.1)
 if __name__ == "__main__":
     rbxColors = {
         1: "#F2F3F3",
@@ -442,6 +460,7 @@ if __name__ == "__main__":
     open_device()
 
     Thread(target=signalHandler, daemon=True).start()
+    Thread(target=headAndHumFinder, daemon=True).start()
 
     app = QApplication([])
     esp = ESPOverlay()
@@ -449,7 +468,7 @@ if __name__ == "__main__":
 
     timer = QTimer()
     timer.timeout.connect(esp.update_players)
-    timer.start(16)
+    timer.start(8)
 
     print('ESP started')
     app.exec_()
