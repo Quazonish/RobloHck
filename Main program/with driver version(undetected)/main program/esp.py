@@ -122,15 +122,20 @@ class ESPOverlay(QOpenGLWidget):
         view_proj_matrix = array(unpack_from("<16f", matrixRaw, 0), dtype=float32).reshape(4, 4)
 
         for head in heads:
-            while True:
-                try:
-                    if GetName(head) == 'Head':
-                        vecs_np[count, :3] = unpack_from("<fff", read(read_int8(head + primitiveOffset) + positionOffset, 12), 0)
-                        vecs_np[count, 3] = 1.0
-                        count += 1
-                    break
-                except OSError:
-                    print(f'Retrying for {head:x}...')
+            try:
+                className = GetClassName(head)
+                if GetName(head) == 'Head' and (className == 'Part' or className == 'BasePart' or className == 'MeshPart'):
+                    vecs_np[count, :3] = unpack_from("<fff", read(read_int8(head + primitiveOffset) + positionOffset, 12), 0)
+                    vecs_np[count, 3] = 1.0
+                    count += 1
+                else:
+                    vecs_np[count, :3] = 0, 0, 0
+                    vecs_np[count, 3] = 1.0
+                    count += 1
+            except OSError:
+                vecs_np[count, :3] = 0, 0, 0
+                vecs_np[count, 3] = 1.0
+                count += 1
 
         if count == 0:
             return

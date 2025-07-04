@@ -225,7 +225,7 @@ class MyApp(QMainWindow, Ui_MainWindow):
 
 if hasattr(sys, '_MEIPASS'):
     radar = Popen([
-        path.join(sys._MEIPASS, 'radar.exe'),
+        path.abspath(path.join(sys._MEIPASS, '..', 'radar.exe')),
         str(int(offsets['ModelInstance'], 16)),
         str(int(offsets['Primitive'], 16)),
         str(int(offsets['Position'], 16)),
@@ -237,7 +237,7 @@ if hasattr(sys, '_MEIPASS'):
     ], stdin=PIPE, text=True)
 
     esp = Popen([
-        path.join(sys._MEIPASS, 'esp.exe'),
+        path.abspath(path.join(sys._MEIPASS, '..', 'esp.exe')),
         str(int(offsets['ModelInstance'], 16)),
         str(int(offsets['Primitive'], 16)),
         str(int(offsets['Position'], 16)),
