@@ -8,7 +8,7 @@ from threading import Thread
 from requests import get
 from subprocess import Popen, PIPE
 from os import path
-from imgui_bundle import imgui, immapp
+from imgui_bundle import imgui, immapp, hello_imgui
 from pymem.exception import ProcessError
 import sys
 
