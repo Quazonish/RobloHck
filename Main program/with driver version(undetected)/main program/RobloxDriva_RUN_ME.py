@@ -1,17 +1,35 @@
 from rbxMemory import *
 from numpy import array, float32, linalg, cross, dot, reshape
 from ctypes import windll, byref, Structure, wintypes
-from ctypes.wintypes import HWND, RECT, POINT
-from math import sqrt
+from ctypes.wintypes import RECT, POINT
+from math import sqrt, pi
 from time import time, sleep
 from threading import Thread
-from gui import Ui_MainWindow
-from PyQt5.QtWidgets import QApplication, QMainWindow
-#from keyboard import on_release
 from requests import get
 from subprocess import Popen, PIPE
 from os import path
+from imgui_bundle import imgui, immapp
 import sys
+
+pi180 = pi/180
+
+reset_enabled = False
+fov_enabled = False
+noclip_enabled = False
+aimbot_enabled = False
+esp_enabled = False
+radar_enabled = False
+esp_ignoreteam = False
+esp_ignoredead = False
+radar_ignoreteam = False
+radar_ignoredead = False
+aimbot_ignoreteam = False
+aimbot_ignoredead = False
+
+walkspeed_val = 16.0
+jumppower_val = 50.0
+fov_val = 70.0
+gravity_val = 196.2
 
 open_device()
 
@@ -48,15 +66,23 @@ def world_to_screen_with_matrix(world_pos, matrix, screen_width, screen_height):
     y = (1 - ndc[1]) * 0.5 * screen_height
     return round(x), round(y)
 
-class MyApp(QMainWindow, Ui_MainWindow):
-    def __init__(self):
-        super().__init__()
-        self.setupUi(self)
-
 camAddr = 0
+dataModel = 0
+wsAddr = 0
+lightingAddr = 0
+fovAddr = 0
+camCFrameRotAddr = 0
+startFogAddr = 0
+endFogAddr = 0
+plrsAddr = 0
+lpAddr = 0
+matrixAddr = 0
+camPosAddr = 0
+radar = None
+esp = None
 
 def init():
-    global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr
+    global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr, radar, esp
     pid = get_pid_by_name("RobloxPlayerBeta.exe")
     if pid is None:
         print('You forget to open roblox!')
@@ -133,19 +159,21 @@ def cframe_look_at(from_pos, to_pos):
     return look_vector, recalculated_up, right_vector
 
 def speedChange(val):
-    getHumAddr()
-    write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-    write_float(humAddr + int(offsets['WalkSpeed'], 16), float(val))
+    if camAddr > 0:
+        getHumAddr()
+        write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
+        write_float(humAddr + int(offsets['WalkSpeed'], 16), float(val))
 
 def jpChange(val):
-    getHumAddr()
-    write_float(humAddr + int(offsets['JumpPower'], 16), float(val))
+    if camAddr > 0:
+        getHumAddr()
+        write_float(humAddr + int(offsets['JumpPower'], 16), float(val))
 
 startTime = 0
 def getHumAddr(changeTime=True):
     global humAddr, startTime
     if time()-startTime > 10:
-        humAddr = read_int8(camAddr + int(offsets['CameraSubject'], 16)) #By default camera subject will be humanoid. Shortening path from game.Players.LocalPlayer.Character.Humanoid to workspace.CurrentCamera.CameraSubject
+        humAddr = read_int8(camAddr + int(offsets['CameraSubject'], 16))
     if changeTime:
         startTime = time()
 
@@ -159,32 +187,36 @@ def getHrpAddr(changeTime=True):
         startTime = time()
 
 def delFog():
-    print('Removing fog...')
-    ChildrenOfInstance = GetChildren(lightingAddr)
-    print('Got children of lighting service!')
-    for i in ChildrenOfInstance:
-        try:
-            if GetClassName(i) == 'Atmosphere':
-                write_float(i+0xE0, float(0))
-                write_float(i+0xE8, float(0))
-                print('Wrote atmosphere')
-        except:
-            pass
-    
-    write_float(endFogAddr, float('inf'))
-    write_float(startFogAddr, float('inf'))
-    print('Fog removed')
+    if lightingAddr > 0:
+        print('Removing fog...')
+        ChildrenOfInstance = GetChildren(lightingAddr)
+        print('Got children of lighting service!')
+        for i in ChildrenOfInstance:
+            try:
+                if GetClassName(i) == 'Atmosphere':
+                    write_float(i+0xE0, float(0))
+                    write_float(i+0xE8, float(0))
+                    print('Wrote atmosphere')
+            except:
+                pass
+        
+        write_float(endFogAddr, float('inf'))
+        write_float(startFogAddr, float('inf'))
+        print('Fog removed')
 
 def fovChange(val):
-    write_float(fovAddr, float(val))
+    if fovAddr > 0:
+        write_float(fovAddr, float(val * pi180))
 
 def gravChange(val):
-    getHrpAddr()
-    write_float(read_int8(hrpAddr + int(offsets['Primitive'], 16)) + int(offsets['PrimitiveGravity'], 16), float(val))
+    if camAddr > 0:
+        getHrpAddr()
+        write_float(read_int8(hrpAddr + int(offsets['Primitive'], 16)) + int(offsets['PrimitiveGravity'], 16), float(val))
 
 def resetChr():
-    getHumAddr()
-    write_float(humAddr + int(offsets['Health'], 16), float(0))
+    if camAddr > 0:
+        getHumAddr()
+        write_float(humAddr + int(offsets['Health'], 16), float(0))
 
 def toogleRadar():
     radar.stdin.write('toogle1\n')
@@ -270,32 +302,15 @@ else:
 
 print('Inited! Creating GUI...')
 
-app = QApplication([])
-window = MyApp()
-window.INJECT.clicked.connect(init)
-window.Speed.valueChanged.connect(speedChange)
-window.Jumppower.valueChanged.connect(jpChange)
-window.DelFog.clicked.connect(delFog)
-window.FOV.valueChanged.connect(fovChange)
-window.Gravity.valueChanged.connect(gravChange)
-window.Reset.clicked.connect(resetChr)
-window.Radar.stateChanged.connect(toogleRadar)
-window.IgnoreTeamRadar.stateChanged.connect(toogleIgnoreTeamRadar)
-window.IgnoreDeadRadar.stateChanged.connect(toogleIgnoreDeadRadar)
-window.ESP.stateChanged.connect(toogleEsp)
-window.IgnoreTeamEsp.stateChanged.connect(toogleIgnoreTeamEsp)
-window.IgnoreDeadEsp.stateChanged.connect(toogleIgnoreDeadEsp)
-window.show()
-
 def loopFOV():
     while True:
-        if window.LoopSetFOV.isChecked():
-            write_float(fovAddr, float(window.FOV.value()))
+        if fov_enabled and fovAddr > 0:
+            write_float(fovAddr, float(fov_val * pi180))
         sleep(1)
 
 def noclipLoop():
     while True:
-        if window.Noclip.isChecked():
+        if noclip_enabled and camAddr > 0:
             getHumAddr(False)
             ChildrenOfInstance = GetChildren(read_int8(humAddr + int(offsets['Parent'], 16)))
             for i in ChildrenOfInstance:
@@ -312,7 +327,7 @@ def aimbotLoop():
     target = 0
     left, top, right, bottom = 0, 0, 1920, 1080
     while True:
-        if window.Aimbot.isChecked():
+        if aimbot_enabled and matrixAddr > 0:
             if windll.user32.GetAsyncKeyState(2) & 0x8000 != 0:
                 if target > 0:
                     from_pos = [read_float(camPosAddr), read_float(camPosAddr+4), read_float(camPosAddr+8)]
@@ -346,13 +361,13 @@ def aimbotLoop():
                     minDistance = float('inf')
                     for v in GetChildren(plrsAddr):
                         if v != lpAddr:
-                            if not window.IgnoreTeamAimbot.isChecked() or read_int8(v + int(offsets['Team'], 16)) != lpTeam:
+                            if not aimbot_ignoreteam or read_int8(v + int(offsets['Team'], 16)) != lpTeam:
                                 char = read_int8(v + int(offsets['ModelInstance'], 16))
                                 head = FindFirstChild(char, 'Head')
                                 hum = FindFirstChildOfClass(char, 'Humanoid')
                                 if head and hum:
                                     health = read_float(hum + int(offsets['Health'], 16))
-                                    if window.IgnoreDeadAimbot.isChecked() and health <= 0:
+                                    if aimbot_ignoredead and health <= 0:
                                         continue
                                     primitive = read_int8(head + int(offsets['Primitive'], 16))
                                     targetPos = primitive + int(offsets['Position'], 16)
@@ -378,12 +393,12 @@ def afterDeath():
         sleep(1)
 
     while True:
-        if window.AfterDeathApply.isChecked():
+        if reset_enabled:
             hum = read_int8(camAddr + int(offsets['CameraSubject'], 16))
             if oldHumAddr != hum:
                 write_float(hum + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-                write_float(hum + int(offsets['WalkSpeed'], 16), float(window.Speed.value()))
-                write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
+                write_float(hum + int(offsets['WalkSpeed'], 16), float(walkspeed_val))
+                write_float(hum + int(offsets['JumpPower'], 16), float(jumppower_val))
                 oldHumAddr = hum
         sleep(1)
 
@@ -391,4 +406,101 @@ Thread(target=loopFOV, daemon=True).start()
 Thread(target=noclipLoop, daemon=True).start()
 Thread(target=aimbotLoop, daemon=True).start()
 Thread(target=afterDeath, daemon=True).start()
-sys.exit(app.exec_())
+
+def render_ui():
+    global reset_enabled, fov_enabled
+    global noclip_enabled, aimbot_enabled, esp_enabled, radar_enabled
+    global esp_ignoreteam, esp_ignoredead, radar_ignoreteam, radar_ignoredead, aimbot_ignoreteam, aimbot_ignoredead
+    global walkspeed_val, jumppower_val, fov_val, gravity_val
+    
+    changed, walkspeed_val = imgui.slider_float("WalkSpeed", walkspeed_val, 0.0, 1000.0, "%.1f")
+    if changed:
+        speedChange(walkspeed_val)
+    
+    changed, jumppower_val = imgui.slider_float("Jump Power", jumppower_val, 0.0, 1000.0, "%.1f")
+    if changed:
+        jpChange(jumppower_val)
+    
+    changed, fov_val = imgui.slider_float("FOV", fov_val, 1.0, 120.0, "%.1f")
+    if changed:
+        fovChange(fov_val)
+    
+    changed, gravity_val = imgui.slider_float("Gravity", gravity_val, 0.0, 500.0, "%.1f")
+    if changed:
+        gravChange(gravity_val)
+    
+    _, noclip_enabled = imgui.checkbox("Noclip", noclip_enabled)
+    _, reset_enabled = imgui.checkbox("Apply after death", reset_enabled)
+    imgui.same_line()
+    _, fov_enabled = imgui.checkbox("Loop set FOV", fov_enabled)
+    
+    imgui.separator()
+    imgui.spacing()
+    
+    imgui.push_style_color(imgui.Col_.text, imgui.ImVec4(0.11, 0.51, 0.81, 1.0))
+    imgui.text("Visual Modifications")
+    imgui.pop_style_color()
+    
+    _, aimbot_enabled = imgui.checkbox("Aimbot", aimbot_enabled)
+    
+    changed, esp_enabled = imgui.checkbox("ESP", esp_enabled)
+    if changed:
+        toogleEsp()
+        
+    changed, radar_enabled = imgui.checkbox("Radar", radar_enabled)
+    if changed:
+        toogleRadar()
+    
+    if imgui.button("Remove Fog"):
+        delFog()
+
+    imgui.spacing()
+    imgui.separator()
+    imgui.spacing()
+    
+    imgui.push_style_color(imgui.Col_.text, imgui.ImVec4(0.11, 0.51, 0.81, 1.0))
+    imgui.text("Visual Settings")
+    imgui.pop_style_color()
+    
+    changed, esp_ignoreteam = imgui.checkbox("Ignore Team [ESP]", esp_ignoreteam)
+    if changed:
+        toogleIgnoreTeamEsp()
+    imgui.same_line()
+    changed, esp_ignoredead = imgui.checkbox("Ignore Dead [ESP]", esp_ignoredead)
+    if changed:
+        toogleIgnoreDeadEsp()
+
+    changed, radar_ignoreteam = imgui.checkbox("Ignore Team [Radar]", radar_ignoreteam)
+    if changed:
+        toogleIgnoreTeamRadar()
+    imgui.same_line()
+    changed, radar_ignoredead = imgui.checkbox("Ignore Dead [Radar]", radar_ignoredead)
+    if changed:
+        toogleIgnoreDeadRadar()
+    
+    _, aimbot_ignoreteam = imgui.checkbox("Ignore Team [Aimbot]", aimbot_ignoreteam)
+    imgui.same_line()
+    _, aimbot_ignoredead = imgui.checkbox("Ignore Dead [Aimbot]", aimbot_ignoredead)
+    
+    imgui.separator()
+    imgui.spacing()
+    
+    imgui.push_style_color(imgui.Col_.text, imgui.ImVec4(0.11, 0.51, 0.81, 1.0))
+    imgui.text("Misc Stuff")
+    imgui.pop_style_color()
+
+    if imgui.button("Inject"):
+        init()
+    imgui.same_line()
+    if imgui.button("Reset"):
+        resetChr()
+
+immapp.run(
+    gui_function=render_ui,
+    window_title="RobloHck 3000",
+    window_size_auto=True,
+    with_markdown=True,
+    fps_idle=10
+)
+esp.terminate()
+radar.terminate()

@@ -26,8 +26,6 @@ This is shitty homemade external/exploit that <mark>you can run everywhere(with 
 # Why ESP/aimbot doesnt work properly?
 One of the known problem for me is scaled display. For proper ESP/aimbot, <mark>set your display scaling at 100%</mark>
 If you are experiencing slow ESP updates, try restarting your computer.
-# Preview:
-![Preview of this roblox external](preview.png)
 # Driver credits:
 Kdmapper: https://github.com/TheCruZ/kdmapper
 Driver: https://github.com/paysonism/payson-ioctl-cheat-driver
