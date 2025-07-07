@@ -13,6 +13,8 @@ from subprocess import Popen, PIPE
 from os import path
 import sys
 
+open_device()
+
 hrpGravAddr = 0
 humAddr = 0
 hrpAddr = 0
@@ -56,45 +58,52 @@ camAddr = 0
 def init():
     global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr
     pid = get_pid_by_name("RobloxPlayerBeta.exe")
+    if pid is None:
+        print('You forget to open roblox!')
+        return
     setPid(pid)
     radar.stdin.write(f'desc{pid}\n')
     radar.stdin.flush()
     esp.stdin.write(f'desc{pid}\n')
     esp.stdin.flush()
-    baseAddr = find_image_base() #get_module_base(pid)
-    
-    fakeDatamodel = read_int8(baseAddr + int(offsets['FakeDataModelPointer'], 16))
-    print(f'Fake datamodel: {fakeDatamodel:x}')
-    
-    dataModel = read_int8(fakeDatamodel + int(offsets['FakeDataModelToDataModel'], 16))
-    print(f'Real datamodel: {dataModel:x}')
-    
-    wsAddr = read_int8(dataModel + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(dataModel, 'Workspace')
-    print(f'Workspace: {wsAddr:x}')
-    
-    camAddr = read_int8(wsAddr + int(offsets['Camera'], 16)) #FindFirstChildOfClass(wsAddr, 'Camera')
-    fovAddr = camAddr + int(offsets['FOV'], 16)
-    camCFrameRotAddr = camAddr + int(offsets['CameraRotation'], 16)
-    camPosAddr = camAddr + int(offsets['CameraPos'], 16)
+    try:
+        baseAddr = find_image_base() #get_module_base(pid)
 
-    print(f'Camera: {camAddr:x}')
+        fakeDatamodel = read_int8(baseAddr + int(offsets['FakeDataModelPointer'], 16))
+        print(f'Fake datamodel: {fakeDatamodel:x}')
+        
+        dataModel = read_int8(fakeDatamodel + int(offsets['FakeDataModelToDataModel'], 16))
+        print(f'Real datamodel: {dataModel:x}')
+        
+        wsAddr = read_int8(dataModel + int(offsets['Workspace'], 16)) #FindFirstChildOfClass(dataModel, 'Workspace')
+        print(f'Workspace: {wsAddr:x}')
+        
+        camAddr = read_int8(wsAddr + int(offsets['Camera'], 16)) #FindFirstChildOfClass(wsAddr, 'Camera')
+        fovAddr = camAddr + int(offsets['FOV'], 16)
+        camCFrameRotAddr = camAddr + int(offsets['CameraRotation'], 16)
+        camPosAddr = camAddr + int(offsets['CameraPos'], 16)
 
-    visualEngine = read_int8(baseAddr + int(offsets['VisualEnginePointer'], 16))
-    matrixAddr = visualEngine + int(offsets['viewmatrix'], 16)
-    print(f'Matrix: {matrixAddr:x}')
-    
-    print('Pls wait while we getting other stuff...')
-    lightingAddr = FindFirstChildOfClass(dataModel, 'Lighting')
-    
-    startFogAddr = lightingAddr + int(offsets['FogStart'], 16)
-    endFogAddr = lightingAddr + int(offsets['FogEnd'], 16)
-    print(f'Lighting service: {lightingAddr:x}')
+        print(f'Camera: {camAddr:x}')
 
-    plrsAddr = FindFirstChildOfClass(dataModel, 'Players')
-    print(f'Players: {plrsAddr:x}')
+        visualEngine = read_int8(baseAddr + int(offsets['VisualEnginePointer'], 16))
+        matrixAddr = visualEngine + int(offsets['viewmatrix'], 16)
+        print(f'Matrix: {matrixAddr:x}')
+        
+        print('Pls wait while we getting other stuff...')
+        lightingAddr = FindFirstChildOfClass(dataModel, 'Lighting')
+        
+        startFogAddr = lightingAddr + int(offsets['FogStart'], 16)
+        endFogAddr = lightingAddr + int(offsets['FogEnd'], 16)
+        print(f'Lighting service: {lightingAddr:x}')
 
-    lpAddr = read_int8(plrsAddr + int(offsets['LocalPlayer'], 16))
-    print(f'Local player: {plrsAddr:x}')
+        plrsAddr = FindFirstChildOfClass(dataModel, 'Players')
+        print(f'Players: {plrsAddr:x}')
+
+        lpAddr = read_int8(plrsAddr + int(offsets['LocalPlayer'], 16))
+        print(f'Local player: {plrsAddr:x}')
+    except OSError:
+        print("You didn't run this program as admin, or you just forgot to drag .sys file into kdmapper(after dragging, restart this program)!")
+        return
 
     radar.stdin.write(f'addrs{lpAddr},{camCFrameRotAddr},{plrsAddr}\n')
     radar.stdin.flush()
@@ -378,7 +387,6 @@ def afterDeath():
                 oldHumAddr = hum
         sleep(1)
 
-open_device()
 Thread(target=loopFOV, daemon=True).start()
 Thread(target=noclipLoop, daemon=True).start()
 Thread(target=aimbotLoop, daemon=True).start()
