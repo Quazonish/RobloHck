@@ -7,7 +7,7 @@ echo Compiling ESP
 pyinstaller --noconfirm --onedir --console --optimize "2" ".\Main program\driveless version(detected)\esp.py"
 robocopy ".\dist\radar" ".\dist\main_RUN_ME" /MOVE /E /XC /XN /XO
 robocopy ".\dist\esp" ".\dist\main_RUN_ME" /MOVE /E /XC /XN /XO
-WinRAR a -afzip -m5 -r -ep1 -o+ "externalDriveless(detected).zip" ".\dist\main_RUN_ME\"
+"C:\Program Files\WinRAR\WinRAR.exe" a -afzip -m5 -r -ep1 -o+ "externalDriveless(detected).zip" ".\dist\main_RUN_ME\"
 
 echo Compiling with driver version(undetected)
 pyinstaller --noconfirm --onedir --console --icon "bruh.ico" --optimize "2" --uac-admin ".\Main program\with driver version(undetected)\main program\RobloxDriva_RUN_ME.py"
@@ -19,5 +19,5 @@ robocopy ".\dist\radar" ".\dist\RobloxDriva_RUN_ME" /MOVE /E /XC /XN /XO
 robocopy ".\dist\esp" ".\dist\RobloxDriva_RUN_ME" /MOVE /E /XC /XN /XO
 copy ".\Main program\with driver version(undetected)\driver" ".\dist\RobloxDriva_RUN_ME\"
 move ".\dist\RobloxDriva_RUN_ME\drag me into kdmapper.sys " ".\dist\RobloxDriva_RUN_ME\drag me into kdmapper BEFORE running main exe file.sys"
-WinRAR a -afzip -m5 -r -ep1 -o+ "externalWithDriver(undetected).zip" ".\dist\RobloxDriva_RUN_ME\"
+"C:\Program Files\WinRAR\WinRAR.exe" a -afzip -m5 -r -ep1 -o+ "externalWithDriver(undetected).zip" ".\dist\RobloxDriva_RUN_ME\"
 pause

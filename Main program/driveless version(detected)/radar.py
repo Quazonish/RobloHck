@@ -324,7 +324,9 @@ def signalHandler():
 Thread(target=signalHandler,daemon=True).start()
 
 def update_frame():
-    if not hidden:
+    if hidden:
+        sleep(1)
+    else:
         draw_radar()
     root.after_idle(update_frame)
 

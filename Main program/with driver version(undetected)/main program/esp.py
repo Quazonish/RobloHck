@@ -71,16 +71,11 @@ class ESPOverlay(QOpenGLWidget):
         glMatrixMode(GL_MODELVIEW)
 
     def paintGL(self):
-        if hidden:
-            return
-        
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
 
         for x, y, color in self.plr_data:
-            r, g, b = QColor(color).redF(), QColor(color).greenF(), QColor(color).blueF()
-
-            glColor3f(r, g, b)
+            glColor3f(QColor(color).redF(), QColor(color).greenF(), QColor(color).blueF())
             glBegin(GL_LINES)
             glVertex2f(self.startLineX, self.startLineY)
             glVertex2f(x, y)
@@ -88,8 +83,6 @@ class ESPOverlay(QOpenGLWidget):
             glEnd()
 
     def update_players(self):
-        self.plr_data.clear()
-
         if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
             sleep(1)
             return
@@ -101,6 +94,8 @@ class ESPOverlay(QOpenGLWidget):
         if self.signalsBlocked():
             sleep(0.1)
             return
+
+        self.plr_data.clear()
 
         vecs_np = empty((50, 4), dtype=float32)
         count = 0
@@ -169,6 +164,12 @@ def signalHandler():
                 setPid(int(line[4:]))
             elif line == 'toogle1':
                 hidden = not hidden
+                if hidden:
+                    esp.plr_data.clear()
+                    esp.update()
+                    sleep(0.1)
+                    esp.plr_data.clear()
+                    esp.update()
             elif line == 'toogle2':
                 ignoreTeam = not ignoreTeam
             elif line == 'toogle3':

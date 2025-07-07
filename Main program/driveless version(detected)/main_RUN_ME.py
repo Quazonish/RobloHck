@@ -143,23 +143,6 @@ def getHrpAddr(changeTime=True):
     if changeTime:
         startTime = time()
 
-def afterDeath():
-    oldHumAddr = 0
-    while camAddr == 0:
-        sleep(1)
-
-    while True:
-        if window.AfterDeathApply.isChecked():
-            hum = pm.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
-            if oldHumAddr != hum:
-                pm.write_float(hum + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-                pm.write_float(hum + int(offsets['WalkSpeed'], 16), float(window.Speed.value()))
-                pm.write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
-                oldHumAddr = hum
-        sleep(1)
-
-Thread(target=afterDeath, daemon=True).start()
-
 def speedChange(val):
     getHumAddr()
     pm.write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
@@ -289,79 +272,107 @@ window.IgnoreTeamEsp.stateChanged.connect(toogleIgnoreTeamEsp)
 window.IgnoreDeadEsp.stateChanged.connect(toogleIgnoreDeadEsp)
 window.show()
 
-def loops():
+def loopFOV():
     while True:
         if window.LoopSetFOV.isChecked():
             pm.write_float(fovAddr, float(window.FOV.value()))
+        sleep(1)
+
+def noclipLoop():
+    while True:
         if window.Noclip.isChecked():
             getHumAddr(False)
             ChildrenOfInstance = GetChildren(pm.read_longlong(humAddr + int(offsets['Parent'], 16)))
             for i in ChildrenOfInstance:
                 try:
                     name = GetName(i)
-                    if name in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso']:
+                    if name in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
                         primitive = pm.read_longlong(i + int(offsets['Primitive'], 16))
                         pm.write_bytes(primitive + int(offsets['CanCollide'], 16), b'\x00', 1)
                 except:
                     pass
+        else:
+            sleep(1)
+
+def aimbotLoop():
+    while True:
         if window.Aimbot.isChecked():
-            while True:
-                if windll.user32.GetAsyncKeyState(2) & 0x8000 != 0:
-                    if target > 0:
-                        from_pos = [pm.read_float(camPosAddr), pm.read_float(camPosAddr+4), pm.read_float(camPosAddr+8)]
-                        to_pos = [pm.read_float(target), pm.read_float(target+4), pm.read_float(target+8)]
+            if windll.user32.GetAsyncKeyState(2) & 0x8000 != 0:
+                if target > 0:
+                    from_pos = [pm.read_float(camPosAddr), pm.read_float(camPosAddr+4), pm.read_float(camPosAddr+8)]
+                    to_pos = [pm.read_float(target), pm.read_float(target+4), pm.read_float(target+8)]
 
-                        look, up, right = cframe_look_at(from_pos, to_pos)
+                    look, up, right = cframe_look_at(from_pos, to_pos)
 
-                        pm.write_float(camCFrameRotAddr, float(-right[0]))
-                        pm.write_float(camCFrameRotAddr+4, float(up[0]))
-                        pm.write_float(camCFrameRotAddr+8, float(-look[0]))
+                    pm.write_float(camCFrameRotAddr, float(-right[0]))
+                    pm.write_float(camCFrameRotAddr+4, float(up[0]))
+                    pm.write_float(camCFrameRotAddr+8, float(-look[0]))
 
-                        pm.write_float(camCFrameRotAddr+12, float(-right[1]))
-                        pm.write_float(camCFrameRotAddr+16, float(up[1]))
-                        pm.write_float(camCFrameRotAddr+20, float(-look[1]))
+                    pm.write_float(camCFrameRotAddr+12, float(-right[1]))
+                    pm.write_float(camCFrameRotAddr+16, float(up[1]))
+                    pm.write_float(camCFrameRotAddr+20, float(-look[1]))
 
-                        pm.write_float(camCFrameRotAddr+24, float(-right[2]))
-                        pm.write_float(camCFrameRotAddr+28, float(up[2]))
-                        pm.write_float(camCFrameRotAddr+32, float(-look[2]))
-                    else:
-                        target = 0
-                        hwnd_roblox = find_window_by_title("Roblox")
-                        if hwnd_roblox:
-                            left, top, right, bottom = get_client_rect_on_screen(hwnd_roblox)
-                        matrix_flat = [pm.read_float(matrixAddr + i * 4) for i in range(16)]
-                        view_proj_matrix = reshape(array(matrix_flat, dtype=float32), (4, 4))
-                        lpTeam = pm.read_longlong(lpAddr + int(offsets['Team'], 16))
-                        width = right - left
-                        height = bottom - top
-                        widthCenter = width/2
-                        heightCenter = height/2
-                        minDistance = float('inf')
-                        for v in GetChildren(plrsAddr):
-                            if v != lpAddr:
-                                if not window.IgnoreTeamAimbot.isChecked() or pm.read_longlong(v + int(offsets['Team'], 16)) != lpTeam:
-                                    char = pm.read_longlong(v + int(offsets['ModelInstance'], 16))
-                                    head = FindFirstChild(char, 'Head')
-                                    hum = FindFirstChildOfClass(char, 'Humanoid')
-                                    if head and hum:
-                                        health = pm.read_float(hum + int(offsets['Health'], 16))
-                                        if window.IgnoreDeadAimbot.isChecked() and health <= 0:
-                                            continue
-                                        primitive = pm.read_longlong(head + int(offsets['Primitive'], 16))
-                                        targetPos = primitive + int(offsets['Position'], 16)
-                                        obj_pos = array([
-                                            pm.read_float(targetPos),
-                                            pm.read_float(targetPos + 4),
-                                            pm.read_float(targetPos + 8)
-                                        ], dtype=float32)
-                                        screen_coords = world_to_screen_with_matrix(obj_pos, view_proj_matrix, width, height)
-                                        if screen_coords is not None:
-                                            distance = sqrt((widthCenter - screen_coords[0])**2 + (heightCenter - screen_coords[1])**2)
-                                            if distance < minDistance:
-                                                minDistance = distance
-                                                target = targetPos
+                    pm.write_float(camCFrameRotAddr+24, float(-right[2]))
+                    pm.write_float(camCFrameRotAddr+28, float(up[2]))
+                    pm.write_float(camCFrameRotAddr+32, float(-look[2]))
                 else:
                     target = 0
+                    hwnd_roblox = find_window_by_title("Roblox")
+                    if hwnd_roblox:
+                        left, top, right, bottom = get_client_rect_on_screen(hwnd_roblox)
+                    matrix_flat = [pm.read_float(matrixAddr + i * 4) for i in range(16)]
+                    view_proj_matrix = reshape(array(matrix_flat, dtype=float32), (4, 4))
+                    lpTeam = pm.read_longlong(lpAddr + int(offsets['Team'], 16))
+                    width = right - left
+                    height = bottom - top
+                    widthCenter = width/2
+                    heightCenter = height/2
+                    minDistance = float('inf')
+                    for v in GetChildren(plrsAddr):
+                        if v != lpAddr:
+                            if not window.IgnoreTeamAimbot.isChecked() or pm.read_longlong(v + int(offsets['Team'], 16)) != lpTeam:
+                                char = pm.read_longlong(v + int(offsets['ModelInstance'], 16))
+                                head = FindFirstChild(char, 'Head')
+                                hum = FindFirstChildOfClass(char, 'Humanoid')
+                                if head and hum:
+                                    health = pm.read_float(hum + int(offsets['Health'], 16))
+                                    if window.IgnoreDeadAimbot.isChecked() and health <= 0:
+                                        continue
+                                    primitive = pm.read_longlong(head + int(offsets['Primitive'], 16))
+                                    targetPos = primitive + int(offsets['Position'], 16)
+                                    obj_pos = array([
+                                        pm.read_float(targetPos),
+                                        pm.read_float(targetPos + 4),
+                                        pm.read_float(targetPos + 8)
+                                    ], dtype=float32)
+                                    screen_coords = world_to_screen_with_matrix(obj_pos, view_proj_matrix, width, height)
+                                    if screen_coords is not None:
+                                        distance = sqrt((widthCenter - screen_coords[0])**2 + (heightCenter - screen_coords[1])**2)
+                                        if distance < minDistance:
+                                            minDistance = distance
+                                            target = targetPos
+            else:
+                target = 0
+        else:
+            sleep(1)
 
-Thread(target=loops, daemon=True).start()
+def afterDeath():
+    oldHumAddr = 0
+    while camAddr == 0:
+        sleep(1)
+
+    while True:
+        if window.AfterDeathApply.isChecked():
+            hum = pm.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
+            if oldHumAddr != hum:
+                pm.write_float(hum + int(offsets['WalkSpeedCheck'], 16), float('inf'))
+                pm.write_float(hum + int(offsets['WalkSpeed'], 16), float(window.Speed.value()))
+                pm.write_float(hum + int(offsets['JumpPower'], 16), float(window.Jumppower.value()))
+                oldHumAddr = hum
+        sleep(1)
+
+Thread(target=afterDeath, daemon=True).start()
+Thread(target=loopFOV, daemon=True).start()
+Thread(target=noclipLoop, daemon=True).start()
+Thread(target=aimbotLoop, daemon=True).start()
 sys.exit(app.exec_())
