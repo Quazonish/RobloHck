@@ -153,7 +153,7 @@ def read_int8(address: int) -> int:
     return read_type("<Q", address)
 
 def write_int8(address: int, value: int) -> int:
-    return write_type("<Q", address, value & 0xFF)
+    return write_type("<Q", address, value)
 
 def read_int4(address: int) -> int:
     return read_type("<I", address)

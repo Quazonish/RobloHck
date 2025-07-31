@@ -85,7 +85,7 @@ def init():
     global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr, radar, esp
     pid = get_pid_by_name("RobloxPlayerBeta.exe")
     if pid is None:
-        print('You forget to open roblox!')
+        print('You forgot to open roblox!')
         return
     setPid(pid)
     radar.stdin.write(f'desc{pid}\n')
