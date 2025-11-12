@@ -1,19 +1,25 @@
 print('Radar starting...')
 from math import atan2, cos, sin, pi
-from rbxMemory import *
-from tkinter import Tk, Canvas
-from sys import stdin, argv
 from threading import Thread
 from time import sleep
-HalfPi = pi/2
+from sys import stdin, argv, exit
+
+from PyQt5.QtWidgets import QApplication, QOpenGLWidget
+from PyQt5.QtCore import Qt, QTimer, QPoint
+from PyQt5.QtGui import QSurfaceFormat
+
+from OpenGL.GL import *
+from rbxMemory import *
+
+HalfPi = pi / 2
 
 WINDOW_SIZE = 300
 TARGET_COUNT = 5
 BORDER_PADDING = 0
 
-windowCenter = WINDOW_SIZE/2
+windowCenter = WINDOW_SIZE / 2
 
-scale = 2
+scale = 2.0
 
 rbxColors = {
     1: "#F2F3F3",
@@ -226,81 +232,23 @@ rbxColors = {
     1032: "#FF00BF"
 }
 
-def draw_radar():
-    global lpX, lpY
-    if lpAddr == 0 or plrsAddr == 0 or camLVAddr == 0:
-        return
-    canvas.delete("all")
+def hex_to_rgbf(hexcol):
+    # '#RRGGBB' -> (r,g,b) floats 0..1
+    if not hexcol or not hexcol.startswith('#'):
+        return (1.0, 1.0, 1.0)
+    h = hexcol.lstrip('#')
+    if len(h) == 6:
+        r = int(h[0:2], 16) / 255.0
+        g = int(h[2:4], 16) / 255.0
+        b = int(h[4:6], 16) / 255.0
+        return (r, g, b)
+    return (1.0, 1.0, 1.0)
 
-    canvas.create_rectangle(0, 0, WINDOW_SIZE, WINDOW_SIZE, fill="black", outline="")
-
-    char = read_int8(lpAddr + modelInstanceOffset)
-    try:
-        hrp = FindFirstChild(char, 'HumanoidRootPart')
-        if hrp is not None and hrp > 0:
-            primitive = read_int8(hrp + primitiveOffset)
-            lpX = read_float(primitive + positionOffset)
-            lpY = read_float(primitive + positionOffset + 8)
-    except OSError:
-        pass
-
-    color = 'red'
-    lpTeam = read_int8(lpAddr + teamOffset)
-    if lpTeam > 0:
-        color = rbxColors[read_int4(lpTeam + teamColorOffset)]
-
-    center_size = 2
-    canvas.create_oval(
-        windowCenter - center_size, windowCenter - center_size,
-        windowCenter + center_size, windowCenter + center_size,
-        fill=color, outline=""
-    )
-
-    camLVX = read_float(camLVAddr)
-    camLVZ = read_float(camLVAddr + 8)
-    camRot = atan2(camLVX, -camLVZ) - HalfPi
-    cos_a = cos(camRot)
-    sin_a = sin(camRot)
-
-    for v in GetChildren(plrsAddr):
-        try:
-            if v == lpAddr:
-                continue
-            team = read_int8(v + teamOffset)
-            if not ignoreTeam or team != lpTeam:
-                char = read_int8(v + modelInstanceOffset)
-
-                if ignoreDead:
-                    hum = FindFirstChildOfClass(char, 'Humanoid')
-                    if hum == 0 or hum is None or read_float(hum + healthOffset) <= 0:
-                        continue
-
-                hrp = FindFirstChild(char, 'HumanoidRootPart')
-                if hrp == 0 or hrp is None:
-                    continue
-
-                primitive = read_int8(hrp + primitiveOffset)
-                x = read_float(primitive + positionOffset) - lpX
-                y = read_float(primitive + positionOffset + 8) - lpY
-
-                dx = x / scale
-                dy = y / scale
-                x = dx * cos_a - dy * sin_a
-                y = dx * sin_a + dy * cos_a
-
-                if -WINDOW_SIZE <= x <= WINDOW_SIZE and -WINDOW_SIZE <= y <= WINDOW_SIZE:
-                    x = windowCenter + x
-                    y = windowCenter + y
-                    color = 'blue'
-                    if team > 0:
-                        color = rbxColors[read_int4(team + teamColorOffset)]
-
-                    canvas.create_oval(
-                        x - 2, y - 2, x + 2, y + 2,
-                        fill=color, outline=""
-                    )
-        except OSError:
-            pass
+lpX = 0.0
+lpY = 0.0
+lpAddr = 0
+camLVAddr = 0
+plrsAddr = 0
 
 hidden = True
 ignoreDead = False
@@ -308,59 +256,209 @@ ignoreTeam = False
 
 def signalHandler():
     global lpAddr, camLVAddr, plrsAddr, hidden, ignoreTeam, ignoreDead
-    while True:
-        for line in stdin:
-            line = line.strip()
-            if line == 'toogle1':
-                hidden = not hidden
-                if hidden:
-                    root.withdraw()
-                else:
-                    root.deiconify()
-            elif line == 'toogle2':
-                ignoreTeam = not ignoreTeam
-            elif line == 'toogle3':
-                ignoreDead = not ignoreDead
-            elif line.startswith('addrs'):
+    for line in stdin:
+        line = line.strip()
+        if line == '':
+            continue
+        if line == 'toogle1':
+            hidden = not hidden
+        elif line == 'toogle2':
+            ignoreTeam = not ignoreTeam
+        elif line == 'toogle3':
+            ignoreDead = not ignoreDead
+        elif line.startswith('addrs'):
+            try:
                 addrs = line[5:].split(',')
                 lpAddr = int(addrs[0])
                 camLVAddr = int(addrs[1])
                 plrsAddr = int(addrs[2])
-            elif line.startswith('desc'):
-                line = line[4:]
-                setPid(int(line))
+            except Exception:
+                pass
+        elif line.startswith('desc'):
+            try:
+                setPid(int(line[4:]))
+            except Exception:
+                pass
 
-Thread(target=signalHandler,daemon=True).start()
+cos_a, sin_a = 0, 0
+def _draw_filled_circle(x, y, radius, color):
+    r, g, b = color
+    glColor4f(r, g, b, 1.0)
+    segments = 24
+    glBegin(GL_TRIANGLE_FAN)
+    glVertex2f(x, y)
+    for i in range(segments + 1):
+        theta = 2.0 * 3.1415926 * i / segments
+        dx = radius * cos(theta)
+        dy = radius * sin(theta)
+        glVertex2f(x + dx, y + dy)
+    glEnd()
 
-def update_frame():
-    if hidden:
-        sleep(1)
-    else:
-        draw_radar()
-    root.after_idle(update_frame)
+def drawCircle(v):
+    global cos_a, sin_a
+    try:
+        if v == lpAddr:
+            return
+        team = read_int8(v + teamOffset)
+        if not ignoreTeam or team != lpTeam:
+            char = read_int8(v + modelInstanceOffset)
 
-root = Tk()
-root.overrideredirect(True)
-root.attributes('-topmost', True)
-root.attributes('-alpha', 0.85)
+        if ignoreDead:
+            hum = FindFirstChildOfClass(char, 'Humanoid')
+            if hum == 0 or hum is None or read_float(hum + healthOffset) <= 0:
+                return
 
-screen_width = root.winfo_screenwidth()
-x_pos = screen_width - WINDOW_SIZE
-root.geometry(f"{WINDOW_SIZE}x{WINDOW_SIZE}+{x_pos}+0")
+        hrp = FindFirstChild(char, 'HumanoidRootPart')
+        if hrp == 0 or hrp is None:
+            return
 
-canvas = Canvas(root, width=WINDOW_SIZE, height=WINDOW_SIZE, bg="black", highlightthickness=0)
-canvas.pack()
-root.update_idletasks()
+        primitive = read_int8(hrp + primitiveOffset)
+        xw = read_float(primitive + positionOffset) - lpX
+        yw = read_float(primitive + positionOffset + 8) - lpY
 
-def on_mouse_wheel(event):
-    global scale
-    if event.delta > 0:
-        if scale > 0.1:
-            scale -= 0.1
-    else:
-        scale += 0.1
+        dx = xw / scale
+        dy = yw / scale
+        x = dx * cos_a - dy * sin_a
+        y = dx * sin_a + dy * cos_a
+
+        if -WINDOW_SIZE <= x <= WINDOW_SIZE and -WINDOW_SIZE <= y <= WINDOW_SIZE:
+            sx = windowCenter + x
+            sy = windowCenter + y
+            pcolor = (0.0, 0.0, 1.0)
+            if team and team > 0:
+                pcolor = hex_to_rgbf(rbxColors.get(read_int4(team + teamColorOffset), "#0000FF"))
+
+            _draw_filled_circle(sx, sy, 2.0, pcolor)
+    except OSError:
+        pass
+
+Thread(target=signalHandler, daemon=True).start()
+
+class RadarGL(QOpenGLWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(WINDOW_SIZE, WINDOW_SIZE)
+        self.setMouseTracking(True)
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.lpTeam = 0
+        self.opacity = 0.85
+        self._last_hidden = hidden
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.on_timer)
+        self.timer.start(16)
+
+    def initializeGL(self):
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_MULTISAMPLE)
+        glEnable(GL_POINT_SMOOTH)
+        glEnable(GL_LINE_SMOOTH)
+        glHint(GL_LINE_SMOOTH_HINT, GL_NICEST)
+        glHint(GL_POINT_SMOOTH_HINT, GL_NICEST)
+        glClearColor(0.0, 0.0, 0.0, 0.0)
+
+    def resizeGL(self, w, h):
+        glViewport(0, 0, w, h)
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(0, w, h, 0, -1, 1)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+    def paintGL(self):
+        if hidden:
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+            return
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glLoadIdentity()
+
+        glColor4f(0.0, 0.0, 0.0, 1.0)
+        glBegin(GL_QUADS)
+        glVertex2f(0, 0)
+        glVertex2f(WINDOW_SIZE, 0)
+        glVertex2f(WINDOW_SIZE, WINDOW_SIZE)
+        glVertex2f(0, WINDOW_SIZE)
+        glEnd()
+
+        global lpX, lpY, lpAddr, camLVAddr, plrsAddr, cos_a, sin_a
+        if lpAddr == 0 or plrsAddr == 0 or camLVAddr == 0:
+            pass
+        else:
+            char = read_int8(lpAddr + modelInstanceOffset)
+            try:
+                hrp = FindFirstChild(char, 'HumanoidRootPart')
+                if hrp is not None and hrp > 0:
+                    primitive = read_int8(hrp + primitiveOffset)
+                    lpX = read_float(primitive + positionOffset)
+                    lpY = read_float(primitive + positionOffset + 8)
+            except OSError:
+                pass
+
+        color = (1.0, 0.0, 0.0)
+        lpTeam = read_int8(lpAddr + teamOffset) if lpAddr != 0 else 0
+        if lpTeam and lpTeam > 0:
+            colidx = read_int4(lpTeam + teamColorOffset)
+            color = hex_to_rgbf(rbxColors.get(colidx, "#FF0000"))
+
+        _draw_filled_circle(windowCenter, windowCenter, 2.0, color)
+
+        camLVX = read_float(camLVAddr) if camLVAddr != 0 else 0.0
+        camLVZ = read_float(camLVAddr + 8) if camLVAddr != 0 else 1.0
+        camRot = atan2(camLVX, -camLVZ) - HalfPi
+        cos_a = cos(camRot)
+        sin_a = sin(camRot)
+
+        if plrsAddr != 0:
+            DoForEveryChild(plrsAddr, drawCircle)
+
+    def on_timer(self):
+        if self._last_hidden != hidden:
+            self._last_hidden = hidden
+            if hidden:
+                self.parent().hide()
+            else:
+                self.parent().show()
+        if hidden:
+            sleep(0.05)
+        self.update()
+
+    def wheelEvent(self, event):
+        global scale
+        delta = event.angleDelta().y()
+        if delta > 0:
+            if scale > 0.1:
+                scale -= 0.1
+        else:
+            scale += 0.1
+
+class RadarWindow(QOpenGLWidget):
+    def __init__(self):
+        super().__init__(None)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
+        self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setWindowOpacity(0.85)
+        self.setFixedSize(WINDOW_SIZE, WINDOW_SIZE)
+
+        self.gl = RadarGL(self)
+        self.gl.move(0, 0)
+
+    def showEvent(self, ev):
+        screen = QApplication.primaryScreen()
+        if screen:
+            geo = screen.availableGeometry()
+            x = geo.x() + geo.width() - WINDOW_SIZE
+            y = geo.y()
+            self.move(x, y)
+        return super().showEvent(ev)
+
+fmt = QSurfaceFormat()
+fmt.setSamples(8)
+fmt.setDepthBufferSize(24)
+QSurfaceFormat.setDefaultFormat(fmt)
+
 args = argv[1:]
-
 modelInstanceOffset = int(args[0])
 primitiveOffset = int(args[1])
 positionOffset = int(args[2])
@@ -368,13 +466,16 @@ teamOffset = int(args[3])
 teamColorOffset = int(args[4])
 healthOffset = int(args[5])
 setOffsets(int(args[6]), int(args[7]))
-open_device()
-lpAddr = 0
-camLVAddr = 0
-plrsAddr = 0
 
-root.bind("<MouseWheel>", on_mouse_wheel)
-root.withdraw()
-update_frame()
+open_device()
+
+app = QApplication([])
+
+window = RadarWindow()
+if hidden:
+    window.hide()
+else:
+    window.show()
+
 print('Radar started')
-root.mainloop()
+app.exec_()

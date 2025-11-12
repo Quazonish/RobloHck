@@ -130,3 +130,19 @@ def FindFirstChildOfClass(instance: int, class_name: str) -> int:
             pass
         current += 0x10
     return 0
+
+def DoForEveryChild(instance: int, function):
+    if not instance:
+        return 0
+
+    start = DRP(instance + childrenOffset)
+    if start == 0:
+        return 0
+    end = DRP(start + 8)
+    current = DRP(start)
+    for _ in range(9000):
+        if current == end:
+            break
+        function(pm.read_longlong(current))
+        current += 0x10
+    return 0

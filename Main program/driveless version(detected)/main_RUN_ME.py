@@ -26,11 +26,11 @@ radar_ignoreteam = False
 radar_ignoredead = False
 aimbot_ignoreteam = False
 aimbot_ignoredead = False
+zoomCam_enabled = False
 
 walkspeed_val = 16.0
 jumppower_val = 50.0
 fov_val = 70.0
-gravity_val = 196.2
 
 def normalize(vec):
     norm = linalg.norm(vec)
@@ -54,13 +54,13 @@ def cframe_look_at(from_pos, to_pos):
 print('Loaded libs! Getting offsets...')
 offsets = get('https://offsets.ntgetwritewatch.workers.dev/offsets.json').json()
 
-print('Supported versions:')
-print(offsets['RobloxVersion'])
-print(offsets['ByfronVersion'])
-print('Current latest roblox version:', get('https://weao.xyz/api/versions/current', headers={'User-Agent': 'WEAO-3PService'}).json()['Windows'])
+print('Converting strings to ints...')
+for key, val in offsets.items():
+    offsets[key] = int(val, 16)
+
 print('Got some offsets! Init...')
 
-setOffsets(int(offsets['Name'], 16), int(offsets['Children'], 16))
+setOffsets(offsets['Name'], offsets['Children'])
 
 class RECT(Structure):
     _fields_ = [('left', wintypes.LONG), ('top', wintypes.LONG), ('right', wintypes.LONG), ('bottom', wintypes.LONG)]
@@ -94,6 +94,7 @@ def world_to_screen_with_matrix(world_pos, matrix, screen_width, screen_height):
 baseAddr = 0
 camAddr = 0
 dataModel = 0
+mouseSensivityAddr = 0
 wsAddr = 0
 lightingAddr = 0
 fovAddr = 0
@@ -124,37 +125,41 @@ def background_process_monitor():
 Thread(target=background_process_monitor, daemon=True).start()
 
 def init():
-    global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr
+    global dataModel, wsAddr, lightingAddr, camAddr, fovAddr, camCFrameRotAddr, startFogAddr, endFogAddr, plrsAddr, lpAddr, matrixAddr, camPosAddr, mouseSensivityAddr
     try:
-        fakeDatamodel = pm.read_longlong(baseAddr + int(offsets['FakeDataModelPointer'], 16))
+        fakeDatamodel = pm.read_longlong(baseAddr + offsets['FakeDataModelPointer'])
         print(f'Fake datamodel: {fakeDatamodel:x}')
 
-        dataModel = pm.read_longlong(fakeDatamodel + int(offsets['FakeDataModelToDataModel'], 16))
+        dataModel = pm.read_longlong(fakeDatamodel + offsets['FakeDataModelToDataModel'])
         print(f'Real datamodel: {dataModel:x}')
 
-        wsAddr = pm.read_longlong(dataModel + int(offsets['Workspace'], 16))
+        wsAddr = pm.read_longlong(dataModel + offsets['Workspace'])
         print(f'Workspace: {wsAddr:x}')
 
-        camAddr = pm.read_longlong(wsAddr + int(offsets['Camera'], 16))
-        fovAddr = camAddr + int(offsets['FOV'], 16)
-        camCFrameRotAddr = camAddr + int(offsets['CameraRotation'], 16)
-        camPosAddr = camAddr + int(offsets['CameraPos'], 16)
+        camAddr = pm.read_longlong(wsAddr + offsets['Camera'])
+        fovAddr = camAddr + offsets['FOV']
+        camCFrameRotAddr = camAddr + offsets['CameraRotation']
+        camPosAddr = camAddr + offsets['CameraPos']
+        print(f'Camera: {camAddr:x}')
 
-        visualEngine = pm.read_longlong(baseAddr + int(offsets['VisualEnginePointer'], 16))
-        matrixAddr = visualEngine + int(offsets['viewmatrix'], 16)
+        mouseSensivityAddr = baseAddr + offsets['MouseSensitivity']
+        print(f'Mouse sensivity: {mouseSensivityAddr:x}')
+
+        visualEngine = pm.read_longlong(baseAddr + offsets['VisualEnginePointer'])
+        matrixAddr = visualEngine + offsets['viewmatrix']
         print(f'Matrix: {matrixAddr:x}')
 
         print('Pls wait while we other stuff...')
         lightingAddr = FindFirstChildOfClass(dataModel, 'Lighting')
 
-        startFogAddr = lightingAddr + int(offsets['FogStart'], 16)
-        endFogAddr = lightingAddr + int(offsets['FogEnd'], 16)
+        startFogAddr = lightingAddr + offsets['FogStart']
+        endFogAddr = lightingAddr + offsets['FogEnd']
         print(f'Lighting service: {lightingAddr:x}')
 
         plrsAddr = FindFirstChildOfClass(dataModel, 'Players')
         print(f'Players: {plrsAddr:x}')
 
-        lpAddr = pm.read_longlong(plrsAddr + int(offsets['LocalPlayer'], 16))
+        lpAddr = pm.read_longlong(plrsAddr + offsets['LocalPlayer'])
         print(f'Local player: {lpAddr:x}')
     except ProcessError:
         print('You forget to open Roblox!')
@@ -170,56 +175,52 @@ def init():
 def getHumAddr(changeTime=True):
     global humAddr, startTime
     if time() - startTime > 10:
-        humAddr = pm.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
+        humAddr = pm.read_longlong(camAddr + offsets['CameraSubject'])
     if changeTime:
         startTime = time()
 
-def getHrpAddr(changeTime=True):
-    global hrpAddr, humAddr, startTime
-    if time() - startTime > 10:
-        humAddr = pm.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
-        char = pm.read_longlong(humAddr + int(offsets['Parent'], 16))
-        hrpAddr = FindFirstChild(char, 'HumanoidRootPart')
-    if changeTime:
-        startTime = time()
+#def getHrpAddr(changeTime=True): #currently unused, but may be used later
+#    global hrpAddr, humAddr, startTime
+#    if time() - startTime > 10:
+#        humAddr = pm.read_longlong(camAddr + offsets['CameraSubject'])
+#        char = pm.read_longlong(humAddr + offsets['Parent'])
+#        hrpAddr = FindFirstChild(char, 'HumanoidRootPart')
+#    if changeTime:
+#        startTime = time()
 
 def speedChange(val):
     if camAddr > 0:
         getHumAddr()
-        pm.write_float(humAddr + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-        pm.write_float(humAddr + int(offsets['WalkSpeed'], 16), float(val))
+        pm.write_float(humAddr + offsets['WalkSpeedCheck'], float('inf'))
+        pm.write_float(humAddr + offsets['WalkSpeed'], float(val))
 
 def jpChange(val):
     if camAddr > 0:
         getHumAddr()
-        pm.write_float(humAddr + int(offsets['JumpPower'], 16), float(val))
+        pm.write_float(humAddr + offsets['JumpPower'], float(val))
+
+def writeAtmosphere(child):
+    if GetClassName(child) == 'Atmosphere':
+        pm.write_float(child+0xE0, float(0))
+        pm.write_float(child+0xE8, float(0))
+        print('Wrote atmosphere')
 
 def delFog():
     if lightingAddr > 0:
-        ChildrenOfInstance = GetChildren(lightingAddr)
-        for i in ChildrenOfInstance:
-            try:
-                if GetClassName(i) == 'Atmosphere':
-                    pm.write_float(i + 0xE0, float(0))
-                    pm.write_float(i + 0xE8, float(0))
-            except:
-                pass
+        print('Removing fog...')
+        DoForEveryChild(lightingAddr, writeAtmosphere)
         pm.write_float(endFogAddr, float('inf'))
         pm.write_float(startFogAddr, float('inf'))
+        print('Fog removed')
 
 def fovChange(val):
     if fovAddr > 0:
         pm.write_float(fovAddr, float(val * pi180))
 
-def gravChange(val):
-    if camAddr > 0:
-        getHrpAddr()
-        pm.write_float(pm.read_longlong(hrpAddr + int(offsets['Primitive'], 16)) + int(offsets['PrimitiveGravity'], 16), float(val))
-
 def resetChr():
     if camAddr > 0:
         getHumAddr()
-        pm.write_float(humAddr + int(offsets['Health'], 16), float(0))
+        pm.write_float(humAddr + offsets['Health'], float(0))
 
 print('Inited! Creating GUI...')
 
@@ -250,50 +251,50 @@ def toogleIgnoreDeadEsp():
 if hasattr(sys, '_MEIPASS'):
     radar = Popen([
         path.abspath(path.join(sys._MEIPASS, '..', 'radar.exe')),
-        str(int(offsets['ModelInstance'], 16)),
-        str(int(offsets['Primitive'], 16)),
-        str(int(offsets['Position'], 16)),
-        str(int(offsets['Team'], 16)),
-        str(int(offsets['TeamColor'], 16)),
-        str(int(offsets['Health'], 16)),
-        str(int(offsets['Name'], 16)),
-        str(int(offsets['Children'], 16))
+        str(offsets['ModelInstance']),
+        str(offsets['Primitive']),
+        str(offsets['Position']),
+        str(offsets['Team']),
+        str(offsets['TeamColor']),
+        str(offsets['Health']),
+        str(offsets['Name']),
+        str(offsets['Children'])
     ], stdin=PIPE, text=True)
 
     esp = Popen([
         path.abspath(path.join(sys._MEIPASS, '..', 'esp.exe')),
-        str(int(offsets['ModelInstance'], 16)),
-        str(int(offsets['Primitive'], 16)),
-        str(int(offsets['Position'], 16)),
-        str(int(offsets['Team'], 16)),
-        str(int(offsets['TeamColor'], 16)),
-        str(int(offsets['Health'], 16)),
-        str(int(offsets['Name'], 16)),
-        str(int(offsets['Children'], 16))
+        str(offsets['ModelInstance']),
+        str(offsets['Primitive']),
+        str(offsets['Position']),
+        str(offsets['Team']),
+        str(offsets['TeamColor']),
+        str(offsets['Health']),
+        str(offsets['Name']),
+        str(offsets['Children'])
     ], stdin=PIPE, text=True)
 else:
     radar = Popen([
         'python', 'radar.py',
-        str(int(offsets['ModelInstance'], 16)),
-        str(int(offsets['Primitive'], 16)),
-        str(int(offsets['Position'], 16)),
-        str(int(offsets['Team'], 16)),
-        str(int(offsets['TeamColor'], 16)),
-        str(int(offsets['Health'], 16)),
-        str(int(offsets['Name'], 16)),
-        str(int(offsets['Children'], 16))
+        str(offsets['ModelInstance']),
+        str(offsets['Primitive']),
+        str(offsets['Position']),
+        str(offsets['Team']),
+        str(offsets['TeamColor']),
+        str(offsets['Health']),
+        str(offsets['Name']),
+        str(offsets['Children'])
     ], stdin=PIPE, text=True)
 
     esp = Popen([
         'python', 'esp.py',
-        str(int(offsets['ModelInstance'], 16)),
-        str(int(offsets['Primitive'], 16)),
-        str(int(offsets['Position'], 16)),
-        str(int(offsets['Team'], 16)),
-        str(int(offsets['TeamColor'], 16)),
-        str(int(offsets['Health'], 16)),
-        str(int(offsets['Name'], 16)),
-        str(int(offsets['Children'], 16))
+        str(offsets['ModelInstance']),
+        str(offsets['Primitive']),
+        str(offsets['Position']),
+        str(offsets['Team']),
+        str(offsets['TeamColor']),
+        str(offsets['Health']),
+        str(offsets['Name']),
+        str(offsets['Children'])
     ], stdin=PIPE, text=True)
 
 def loopFOV():
@@ -302,23 +303,51 @@ def loopFOV():
             pm.write_float(fovAddr, float(fov_val * pi180))
         sleep(1)
 
+def disableCollide(child):
+    if GetName(child) in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
+        pm.write_bytes(pm.read_longlong(child + offsets['Primitive']) + offsets['CanCollide'] + offsets['CanCollideMask'] - 1, b'\x30', 1)
+
 def noclipLoop():
     while True:
         if noclip_enabled and camAddr > 0:
             getHumAddr(False)
-            ChildrenOfInstance = GetChildren(pm.read_longlong(humAddr + int(offsets['Parent'], 16)))
-            for i in ChildrenOfInstance:
-                try:
-                    name = GetName(i)
-                    if name in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
-                        primitive = pm.read_longlong(i + int(offsets['Primitive'], 16))
-                        pm.write_bytes(primitive + int(offsets['CanCollide'], 16), b'\x00', 1)
-                except:
-                    pass
+            DoForEveryChild(pm.read_longlong(humAddr + offsets['Parent']), disableCollide)
         else:
             sleep(1)
 
+target = 0
+width, height = 1920, 1080
+widthCenter, heightCenter = 960, 540
+view_proj_matrix = None
+minDistance = float('inf')
+def checkIsPlayerClosest(child):
+    global target, view_proj_matrix, width, height, widthCenter, heightCenter, minDistance
+    if child != lpAddr:
+        if not aimbot_ignoreteam or pm.read_longlong(child + offsets['Team']) != lpTeam:
+            char = pm.read_longlong(child + offsets['ModelInstance'])
+            head = FindFirstChild(char, 'Head')
+            hum = FindFirstChildOfClass(char, 'Humanoid')
+            if head and hum:
+                health = pm.read_float(hum + offsets['Health'])
+                if aimbot_ignoredead and health <= 0:
+                    return
+                primitive = pm.read_longlong(head + offsets['Primitive'])
+                targetPos = primitive + offsets['Position']
+                obj_pos = array([
+                    pm.read_float(targetPos),
+                    pm.read_float(targetPos + 4),
+                    pm.read_float(targetPos + 8)
+                ], dtype=float32)
+                screen_coords = world_to_screen_with_matrix(obj_pos, view_proj_matrix, width, height)
+                if screen_coords is not None:
+                    distance = sqrt((widthCenter - screen_coords[0])**2 + (heightCenter - screen_coords[1])**2)
+                    if distance < minDistance:
+                        minDistance = distance
+                        target = targetPos
+
 def aimbotLoop():
+    global target, view_proj_matrix, width, height, widthCenter, heightCenter, minDistance
+    left, top, right, bottom = 0, 0, 1920, 1080
     while True:
         if aimbot_enabled:
             if windll.user32.GetAsyncKeyState(2) & 0x8000 != 0:
@@ -346,35 +375,13 @@ def aimbotLoop():
                         left, top, right, bottom = get_client_rect_on_screen(hwnd_roblox)
                     matrix_flat = [pm.read_float(matrixAddr + i * 4) for i in range(16)]
                     view_proj_matrix = reshape(array(matrix_flat, dtype=float32), (4, 4))
-                    lpTeam = pm.read_longlong(lpAddr + int(offsets['Team'], 16))
+                    lpTeam = pm.read_longlong(lpAddr + offsets['Team'])
                     width = right - left
                     height = bottom - top
                     widthCenter = width/2
                     heightCenter = height/2
                     minDistance = float('inf')
-                    for v in GetChildren(plrsAddr):
-                        if v != lpAddr:
-                            if not aimbot_ignoreteam or pm.read_longlong(v + int(offsets['Team'], 16)) != lpTeam:
-                                char = pm.read_longlong(v + int(offsets['ModelInstance'], 16))
-                                head = FindFirstChild(char, 'Head')
-                                hum = FindFirstChildOfClass(char, 'Humanoid')
-                                if head and hum:
-                                    health = pm.read_float(hum + int(offsets['Health'], 16))
-                                    if aimbot_ignoredead and health <= 0:
-                                        continue
-                                    primitive = pm.read_longlong(head + int(offsets['Primitive'], 16))
-                                    targetPos = primitive + int(offsets['Position'], 16)
-                                    obj_pos = array([
-                                        pm.read_float(targetPos),
-                                        pm.read_float(targetPos + 4),
-                                        pm.read_float(targetPos + 8)
-                                    ], dtype=float32)
-                                    screen_coords = world_to_screen_with_matrix(obj_pos, view_proj_matrix, width, height)
-                                    if screen_coords is not None:
-                                        distance = sqrt((widthCenter - screen_coords[0])**2 + (heightCenter - screen_coords[1])**2)
-                                        if distance < minDistance:
-                                            minDistance = distance
-                                            target = targetPos
+                    DoForEveryChild(plrsAddr, checkIsPlayerClosest)
             else:
                 target = 0
         else:
@@ -387,24 +394,53 @@ def afterDeath():
 
     while True:
         if reset_enabled:
-            hum = pm.read_longlong(camAddr + int(offsets['CameraSubject'], 16))
+            hum = pm.read_longlong(camAddr + offsets['CameraSubject'])
             if oldHumAddr != hum:
-                pm.write_float(hum + int(offsets['WalkSpeedCheck'], 16), float('inf'))
-                pm.write_float(hum + int(offsets['WalkSpeed'], 16), float(walkspeed_val))
-                pm.write_float(hum + int(offsets['JumpPower'], 16), float(jumppower_val))
+                pm.write_float(hum + offsets['WalkSpeedCheck'], float('inf'))
+                pm.write_float(hum + offsets['WalkSpeed'], float(walkspeed_val))
+                pm.write_float(hum + offsets['JumpPower'], float(jumppower_val))
                 oldHumAddr = hum
         sleep(1)
+oldRBM = False
+def camZoomLoop():
+    global oldRBM
+    while True:
+        if mouseSensivityAddr > 0 and fovAddr > 0:
+            if zoomCam_enabled:
+                if windll.user32.GetAsyncKeyState(2) & 0x8000 == 0 and oldRBM:
+                    pm.write_float(fovAddr, pm.read_float(fovAddr) * 4)
+                    newMouseSens = pm.read_float(mouseSensivityAddr) * 4
+                    pm.write_float(mouseSensivityAddr, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0x4, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0x8, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0xC, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0x44, newMouseSens)
+                    oldRBM = False
+                elif windll.user32.GetAsyncKeyState(2) & 0x8000 != 0 and oldRBM == False:
+                    pm.write_float(fovAddr, pm.read_float(fovAddr) / 4)
+                    newMouseSens = pm.read_float(mouseSensivityAddr) / 4
+                    pm.write_float(mouseSensivityAddr, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0x4, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0x8, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0xC, newMouseSens)
+                    pm.write_float(mouseSensivityAddr + 0x44, newMouseSens)
+                    oldRBM = True
+            else:
+                sleep(1)
+        else:
+            sleep(1)
 
 Thread(target=afterDeath, daemon=True).start()
 Thread(target=loopFOV, daemon=True).start()
 Thread(target=noclipLoop, daemon=True).start()
+Thread(target=camZoomLoop, daemon=True).start()
 Thread(target=aimbotLoop, daemon=True).start()
 
 def render_ui():
-    global reset_enabled, fov_enabled
+    global reset_enabled, fov_enabled, zoomCam_enabled
     global noclip_enabled, aimbot_enabled, esp_enabled, radar_enabled
     global esp_ignoreteam, esp_ignoredead, radar_ignoreteam, radar_ignoredead, aimbot_ignoreteam, aimbot_ignoredead
-    global walkspeed_val, jumppower_val, fov_val, gravity_val
+    global walkspeed_val, jumppower_val, fov_val
     
     changed, walkspeed_val = imgui.slider_float("WalkSpeed", walkspeed_val, 0.0, 1000.0, "%.1f")
     if changed:
@@ -418,11 +454,10 @@ def render_ui():
     if changed:
         fovChange(fov_val)
     
-    changed, gravity_val = imgui.slider_float("Gravity", gravity_val, 0.0, 500.0, "%.1f")
-    if changed:
-        gravChange(gravity_val)
-    
     _, noclip_enabled = imgui.checkbox("Noclip", noclip_enabled)
+    imgui.same_line()
+    _, zoomCam_enabled = imgui.checkbox("Zoom camera when aiming", zoomCam_enabled)
+
     _, reset_enabled = imgui.checkbox("Apply after death", reset_enabled)
     imgui.same_line()
     _, fov_enabled = imgui.checkbox("Loop set FOV", fov_enabled)
@@ -435,12 +470,15 @@ def render_ui():
     imgui.pop_style_color()
     
     _, aimbot_enabled = imgui.checkbox("Aimbot", aimbot_enabled)
+    imgui.same_line()
     
     changed, esp_enabled = imgui.checkbox("ESP", esp_enabled)
+    imgui.same_line()
     if changed:
         toogleEsp()
         
     changed, radar_enabled = imgui.checkbox("Radar", radar_enabled)
+    imgui.same_line()
     if changed:
         toogleRadar()
     

@@ -293,6 +293,22 @@ def FindFirstChildOfClass(Instance: int, ClassName: str) -> int:
         CurrentChildAddress += OffsetAddressPerChild
     return 0
 
+def DoForEveryChild(Instance: int, function):
+    InstanceAddress = Instance
+    if not InstanceAddress:
+        return
+    ChildrenStart = DRP(InstanceAddress + childrenOffset, True)
+    if ChildrenStart == 0:
+        return
+    ChildrenEnd = DRP(ChildrenStart + 8, True)
+    OffsetAddressPerChild = 0x10
+    CurrentChildAddress = DRP(ChildrenStart, True)
+    for i in range(0, 9000):
+        if CurrentChildAddress == ChildrenEnd:
+            break
+        function(read_int8(CurrentChildAddress))
+        CurrentChildAddress += OffsetAddressPerChild
+
 def setOffsets(nameOffset2: int, childrenOffset2: int):
     global nameOffset, childrenOffset
     nameOffset, childrenOffset = nameOffset2, childrenOffset2

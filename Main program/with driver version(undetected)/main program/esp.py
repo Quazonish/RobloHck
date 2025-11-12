@@ -177,8 +177,57 @@ def signalHandler():
 
 heads = []
 colors = []
+tempColors = []
+tempHeads = []
+
+def headAndHumFinderTick(v):
+    global tempColors, tempHeads
+    try:
+        if v == lpAddr:
+            return
+        team = read_int8(v + teamOffset)
+        if not ignoreTeam or (team != lpTeam and team > 0):
+            char = read_int8(v + modelInstanceOffset)
+            if not char:
+                return
+            ChildrenStart = DRP(char + childrenOffset, True)
+            if ChildrenStart == 0:
+                return
+            head, hum = 0, 0
+            ChildrenEnd = DRP(ChildrenStart + 8, True)
+            OffsetAddressPerChild = 0x10
+            CurrentChildAddress = DRP(ChildrenStart, True)
+            for _ in range(0, 256):
+                try:
+                    if CurrentChildAddress == ChildrenEnd:
+                        break
+                    child = read_int8(CurrentChildAddress)
+                    if not(head > 0) and GetName(child) == 'Head':
+                        head = child
+                    elif not(hum > 0) and GetClassName(child) == 'Humanoid':
+                        hum = child
+                    elif head > 0 and hum > 0:
+                        break
+                    CurrentChildAddress += OffsetAddressPerChild
+                except OSError:
+                    pass
+            if head and hum:
+                try:
+                    if ignoreDead and read_float(hum + healthOffset) <= 0:
+                        return
+                    team = read_int8(v + teamOffset)
+                    color = 'white'
+                    if team > 0:
+                        color = rbxColors[read_int4(team + teamColorOffset)]
+                    tempColors.append(color)
+                    tempHeads.append(head)
+                except OSError:
+                    pass
+    except OSError:
+        pass
+
 def headAndHumFinder():
-    global heads, colors
+    global heads, colors, tempColors, tempHeads
     while True:
         if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
             sleep(1)
@@ -192,47 +241,8 @@ def headAndHumFinder():
         tempHeads = []
 
         lpTeam = read_int8(lpAddr + teamOffset)
-        for v in GetChildren(plrsAddr):
-            if v == lpAddr:
-                continue
-            team = read_int8(v + teamOffset)
-            if not ignoreTeam or (team != lpTeam and team > 0):
-                char = read_int8(v + modelInstanceOffset)
-                if not char:
-                    continue
-                ChildrenStart = DRP(char + childrenOffset, True)
-                if ChildrenStart == 0:
-                    continue
-                head, hum = 0, 0
-                ChildrenEnd = DRP(ChildrenStart + 8, True)
-                OffsetAddressPerChild = 0x10
-                CurrentChildAddress = DRP(ChildrenStart, True)
-                for _ in range(0, 256):
-                    try:
-                        if CurrentChildAddress == ChildrenEnd:
-                            break
-                        child = read_int8(CurrentChildAddress)
-                        if not(head > 0) and GetName(child) == 'Head':
-                            head = child
-                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
-                            hum = child
-                        elif head > 0 and hum > 0:
-                            break
-                        CurrentChildAddress += OffsetAddressPerChild
-                    except OSError:
-                        pass
-                if head and hum:
-                    try:
-                        if ignoreDead and read_float(hum + healthOffset) <= 0:
-                            continue
-                        team = read_int8(v + teamOffset)
-                        color = 'white'
-                        if team > 0:
-                            color = rbxColors[read_int4(team + teamColorOffset)]
-                        tempColors.append(color)
-                        tempHeads.append(head)
-                    except OSError:
-                        pass
+        DoForEveryChild(plrsAddr, headAndHumFinderTick)
+
         heads = tempHeads
         colors = tempColors
         sleep(0.1)
@@ -474,7 +484,7 @@ if __name__ == "__main__":
 
     timer = QTimer()
     timer.timeout.connect(esp.update_players)
-    timer.start(8)
+    timer.start(16)
 
     print('ESP started')
     app.exec_()

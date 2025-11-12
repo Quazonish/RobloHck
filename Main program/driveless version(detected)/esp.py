@@ -183,8 +183,48 @@ def signalHandler():
 
 heads = []
 colors = []
+tempColors = []
+tempHeads = []
+
+def headAndHumFinderTick(v):
+    global heads, colors, tempColors, tempHeads
+    if v == lpAddr:
+        return
+    team = pm.read_longlong(v + teamOffset)
+    if not ignoreTeam or (team != lpTeam and team > 0):
+        char = pm.read_longlong(v + modelInstanceOffset)
+        if not char:
+            return
+        ChildrenStart = DRP(char + childrenOffset)
+        if ChildrenStart == 0:
+            return
+        head, hum = 0, 0
+        ChildrenEnd = DRP(ChildrenStart + 8)
+        OffsetAddressPerChild = 0x10
+        CurrentChildAddress = DRP(ChildrenStart)
+        for _ in range(0, 256):
+            if CurrentChildAddress == ChildrenEnd:
+                break
+            child = pm.read_longlong(CurrentChildAddress)
+            if not(head > 0) and GetName(child) == 'Head':
+                head = child
+            elif not(hum > 0) and GetClassName(child) == 'Humanoid':
+                hum = child
+            elif head > 0 and hum > 0:
+                break
+            CurrentChildAddress += OffsetAddressPerChild
+        if head and hum:
+            if ignoreDead and pm.read_float(hum + healthOffset) <= 0:
+                return
+            team = pm.read_longlong(v + teamOffset)
+            color = 'white'
+            if team > 0:
+                color = rbxColors[pm.read_int(team + teamColorOffset)]
+            tempColors.append(color)
+            tempHeads.append(head)
+
 def headAndHumFinder():
-    global heads, colors
+    global heads, colors, tempColors, tempHeads
     while True:
         if lpAddr == 0 or plrsAddr == 0 or matrixAddr == 0:
             sleep(1)
@@ -198,47 +238,9 @@ def headAndHumFinder():
         tempHeads = []
 
         lpTeam = pm.read_longlong(lpAddr + teamOffset)
-        for v in GetChildren(plrsAddr):
-            if v == lpAddr:
-                continue
-            team = pm.read_longlong(v + teamOffset)
-            if not ignoreTeam or (team != lpTeam and team > 0):
-                char = pm.read_longlong(v + modelInstanceOffset)
-                if not char:
-                    continue
-                ChildrenStart = DRP(char + childrenOffset)
-                if ChildrenStart == 0:
-                    continue
-                head, hum = 0, 0
-                ChildrenEnd = DRP(ChildrenStart + 8)
-                OffsetAddressPerChild = 0x10
-                CurrentChildAddress = DRP(ChildrenStart)
-                for _ in range(0, 256):
-                    try:
-                        if CurrentChildAddress == ChildrenEnd:
-                            break
-                        child = pm.read_longlong(CurrentChildAddress)
-                        if not(head > 0) and GetName(child) == 'Head':
-                            head = child
-                        elif not(hum > 0) and GetClassName(child) == 'Humanoid':
-                            hum = child
-                        elif head > 0 and hum > 0:
-                            break
-                        CurrentChildAddress += OffsetAddressPerChild
-                    except:
-                        pass
-                if head and hum:
-                    try:
-                        if ignoreDead and pm.read_float(hum + healthOffset) <= 0:
-                            continue
-                        team = pm.read_longlong(v + teamOffset)
-                        color = 'white'
-                        if team > 0:
-                            color = rbxColors[pm.read_int(team + teamColorOffset)]
-                        tempColors.append(color)
-                        tempHeads.append(head)
-                    except:
-                        pass
+        
+        DoForEveryChild(plrsAddr, headAndHumFinderTick)
+        
         heads = tempHeads
         colors = tempColors
         sleep(0.1)
