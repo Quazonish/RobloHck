@@ -16,7 +16,7 @@ pi180 = pi/180
 
 reset_enabled = False
 fov_enabled = False
-noclip_enabled = False
+#noclip_enabled = False
 aimbot_enabled = False
 esp_enabled = False
 radar_enabled = False
@@ -245,7 +245,10 @@ offsets = get('https://offsets.ntgetwritewatch.workers.dev/offsets.json').json()
 
 print('Converting strings to ints...')
 for key, val in offsets.items():
-    offsets[key] = int(val, 16)
+    try:
+        offsets[key] = int(val, 16)
+    except ValueError:
+        pass
 
 print('Got some offsets! Init...')
 setOffsets(offsets['Name'], offsets['Children'])
@@ -307,20 +310,20 @@ def loopFOV():
             write_float(fovAddr, float(fov_val * pi180))
         sleep(1)
 
-def disableCollide(child):
-    try:
-        if GetName(child) in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
-            write(read_int8(child + offsets['Primitive']) + offsets['CanCollide'] + offsets['CanCollideMask'] - 1, b'\x30')
-    except OSError:
-        pass
+#def disableCollide(child):
+#    try:
+#        if GetName(child) in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
+#            write(read_int8(child + offsets['Primitive']) + offsets['CanCollide'] + offsets['CanCollideMask'], b'\x30')
+#    except OSError:
+#        pass
 
-def noclipLoop():
-    while True:
-        if noclip_enabled and camAddr > 0:
-            getHumAddr(False)
-            DoForEveryChild(read_int8(humAddr + offsets['Parent']), disableCollide)
-        else:
-            sleep(1)
+#def noclipLoop():
+#    while True:
+#        if noclip_enabled and camAddr > 0:
+#            getHumAddr(False)
+#            DoForEveryChild(read_int8(humAddr + offsets['Parent']), disableCollide)
+#        else:
+#            sleep(1)
 
 target = 0
 width, height = 1920, 1080
@@ -432,14 +435,14 @@ def camZoomLoop():
                 
 
 Thread(target=loopFOV, daemon=True).start()
-Thread(target=noclipLoop, daemon=True).start()
+#Thread(target=noclipLoop, daemon=True).start()
 Thread(target=aimbotLoop, daemon=True).start()
 Thread(target=camZoomLoop, daemon=True).start()
 Thread(target=afterDeath, daemon=True).start()
 
 def render_ui():
     global reset_enabled, fov_enabled, zoomCam_enabled
-    global noclip_enabled, aimbot_enabled, esp_enabled, radar_enabled
+    global aimbot_enabled, esp_enabled, radar_enabled#, noclip_enabled
     global esp_ignoreteam, esp_ignoredead, radar_ignoreteam, radar_ignoredead, aimbot_ignoreteam, aimbot_ignoredead
     global walkspeed_val, jumppower_val, fov_val
     
@@ -455,8 +458,8 @@ def render_ui():
     if changed:
         fovChange(fov_val)
     
-    _, noclip_enabled = imgui.checkbox("Noclip", noclip_enabled)
-    imgui.same_line()
+    #_, noclip_enabled = imgui.checkbox("Noclip", noclip_enabled)
+    #imgui.same_line()
     _, zoomCam_enabled = imgui.checkbox("Zoom camera when aiming", zoomCam_enabled)
 
     _, reset_enabled = imgui.checkbox("Apply after death", reset_enabled)

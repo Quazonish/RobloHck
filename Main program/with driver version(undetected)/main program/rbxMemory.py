@@ -175,7 +175,7 @@ def find_image_base() -> int:
     args = BA()
     args.security = code_security
     args.process_id = process_id
-    args.address = pointer(image_addr)  # ✅
+    args.address = pointer(image_addr)
 
     if not DeviceIoControl(driver_handle, code_ba, byref(args), sizeof(args), None, 0, None, None):
         raise OSError("DeviceIoControl BA failed")

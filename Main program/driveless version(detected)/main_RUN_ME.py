@@ -9,6 +9,7 @@ from requests import get
 from subprocess import Popen, PIPE
 from os import path
 from imgui_bundle import imgui, immapp, hello_imgui
+from struct import unpack_from, pack
 from pymem.exception import ProcessError
 import sys
 
@@ -16,7 +17,7 @@ pi180 = pi/180
 
 reset_enabled = False
 fov_enabled = False
-noclip_enabled = False
+#noclip_enabled = False
 aimbot_enabled = False
 esp_enabled = False
 radar_enabled = False
@@ -56,7 +57,10 @@ offsets = get('https://offsets.ntgetwritewatch.workers.dev/offsets.json').json()
 
 print('Converting strings to ints...')
 for key, val in offsets.items():
-    offsets[key] = int(val, 16)
+    try:
+        offsets[key] = int(val, 16)
+    except ValueError:
+        pass
 
 print('Got some offsets! Init...')
 
@@ -303,17 +307,17 @@ def loopFOV():
             pm.write_float(fovAddr, float(fov_val * pi180))
         sleep(1)
 
-def disableCollide(child):
-    if GetName(child) in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
-        pm.write_bytes(pm.read_longlong(child + offsets['Primitive']) + offsets['CanCollide'] + offsets['CanCollideMask'] - 1, b'\x30', 1)
+#def disableCollide(child):
+#    if GetName(child) in ['HumanoidRootPart', 'UpperTorso', 'LowerTorso', 'Torso', 'Head']:
+#        pm.write_bytes(pm.read_longlong(child + offsets['Primitive']) + offsets['CanCollide'] + offsets['CanCollideMask'] - 1, b'\x30', 1)
 
-def noclipLoop():
-    while True:
-        if noclip_enabled and camAddr > 0:
-            getHumAddr(False)
-            DoForEveryChild(pm.read_longlong(humAddr + offsets['Parent']), disableCollide)
-        else:
-            sleep(1)
+#def noclipLoop():
+#    while True:
+#        if noclip_enabled and camAddr > 0:
+#            getHumAddr(False)
+#            DoForEveryChild(pm.read_longlong(humAddr + offsets['Parent']), disableCollide)
+#        else:
+#            sleep(1)
 
 target = 0
 width, height = 1920, 1080
@@ -357,17 +361,23 @@ def aimbotLoop():
 
                     look, up, right = cframe_look_at(from_pos, to_pos)
 
-                    pm.write_float(camCFrameRotAddr, float(-right[0]))
-                    pm.write_float(camCFrameRotAddr+4, float(up[0]))
-                    pm.write_float(camCFrameRotAddr+8, float(-look[0]))
+                    #pm.write_float(camCFrameRotAddr, float(-right[0]))
+                    #pm.write_float(camCFrameRotAddr+4, float(up[0]))
+                    #pm.write_float(camCFrameRotAddr+8, float(-look[0]))
 
-                    pm.write_float(camCFrameRotAddr+12, float(-right[1]))
-                    pm.write_float(camCFrameRotAddr+16, float(up[1]))
-                    pm.write_float(camCFrameRotAddr+20, float(-look[1]))
+                    #pm.write_float(camCFrameRotAddr+12, float(-right[1]))
+                    #pm.write_float(camCFrameRotAddr+16, float(up[1]))
+                    #pm.write_float(camCFrameRotAddr+20, float(-look[1]))
 
-                    pm.write_float(camCFrameRotAddr+24, float(-right[2]))
-                    pm.write_float(camCFrameRotAddr+28, float(up[2]))
-                    pm.write_float(camCFrameRotAddr+32, float(-look[2]))
+                    #pm.write_float(camCFrameRotAddr+24, float(-right[2]))
+                    #pm.write_float(camCFrameRotAddr+28, float(up[2]))
+                    #pm.write_float(camCFrameRotAddr+32, float(-look[2]))
+
+                    pm.write_bytes(camCFrameRotAddr, pack("<fffffffff",
+                        -right[0], up[0], -look[0],
+                        -right[1], up[1], -look[1],
+                        -right[2], up[2], -look[2]                         
+                    ), 36)
                 else:
                     target = 0
                     hwnd_roblox = find_window_by_title("Roblox")
@@ -432,13 +442,13 @@ def camZoomLoop():
 
 Thread(target=afterDeath, daemon=True).start()
 Thread(target=loopFOV, daemon=True).start()
-Thread(target=noclipLoop, daemon=True).start()
+#Thread(target=noclipLoop, daemon=True).start()
 Thread(target=camZoomLoop, daemon=True).start()
 Thread(target=aimbotLoop, daemon=True).start()
 
 def render_ui():
     global reset_enabled, fov_enabled, zoomCam_enabled
-    global noclip_enabled, aimbot_enabled, esp_enabled, radar_enabled
+    global aimbot_enabled, esp_enabled, radar_enabled#, noclip_enabled
     global esp_ignoreteam, esp_ignoredead, radar_ignoreteam, radar_ignoredead, aimbot_ignoreteam, aimbot_ignoredead
     global walkspeed_val, jumppower_val, fov_val
     
@@ -454,8 +464,8 @@ def render_ui():
     if changed:
         fovChange(fov_val)
     
-    _, noclip_enabled = imgui.checkbox("Noclip", noclip_enabled)
-    imgui.same_line()
+    #_, noclip_enabled = imgui.checkbox("Noclip", noclip_enabled)
+    #imgui.same_line()
     _, zoomCam_enabled = imgui.checkbox("Zoom camera when aiming", zoomCam_enabled)
 
     _, reset_enabled = imgui.checkbox("Apply after death", reset_enabled)
