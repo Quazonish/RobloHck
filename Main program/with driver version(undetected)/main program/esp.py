@@ -41,7 +41,7 @@ class ESPOverlay(QOpenGLWidget):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_NoSystemBackground)
-        self.resize(1920, 1080)
+        self.resize(10, 10)
         self.humOffsetCached = 0
         self.headOffsetCached = 0
         self.time = 0
@@ -54,6 +54,8 @@ class ESPOverlay(QOpenGLWidget):
         ex_style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
         ex_style |= WS_EX_LAYERED | WS_EX_TRANSPARENT
         ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, ex_style)
+        sleep(0.1)
+        self.show()
 
     def initializeGL(self):
         glClearColor(0.0, 0.0, 0.0, 0.0)
@@ -71,6 +73,9 @@ class ESPOverlay(QOpenGLWidget):
         glMatrixMode(GL_MODELVIEW)
 
     def paintGL(self):
+        if not self.context() or not self.context().isValid():
+            return
+
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
 
@@ -480,7 +485,6 @@ if __name__ == "__main__":
 
     app = QApplication([])
     esp = ESPOverlay()
-    esp.show()
 
     timer = QTimer()
     timer.timeout.connect(esp.update_players)

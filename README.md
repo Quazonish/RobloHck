@@ -27,8 +27,7 @@ This is shitty homemade external/exploit that <mark>you can run everywhere(with 
 One of the known problem for me is scaled display. For proper ESP/aimbot, <mark>set your display scaling at 100%</mark>
 If you are experiencing slow ESP updates, try restarting your computer.
 # Driver credits:
-Kdmapper: https://github.com/TheCruZ/kdmapper
-Driver: https://github.com/paysonism/payson-ioctl-cheat-driver
-Precompiled driver: https://github.com/kitodoescode/SkidExternal/blob/main/build/sybau.sys
+Kdmapper: https://github.com/Quazonish/kdmapper
+Driver: https://github.com/Quazonish/payson-ioctl-cheat-driver
 ***
 <sub>[Quazonish](https://github.com/Quazonish/)</sub>
